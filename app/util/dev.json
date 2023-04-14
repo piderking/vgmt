@@ -1,0 +1,13 @@
+{
+
+    "version": "0.0.1",
+    "title": "VGM Development API",
+    "prod": false,
+    "debug": true,
+    "storage_bucket_url":"",
+    "doc_url": "https://google.com",
+    "csv_local_path":"./data"
+
+
+
+}
