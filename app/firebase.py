@@ -5,11 +5,10 @@ import os
 def initFirebase():
     cred = firebase_admin.credentials.Certificate(os.path.join( "auth", "firebase.json"))
     app = firebase_admin.initialize_app(cred, {'storageBucket': 'vgmt-4a063.appspot.com'})
-    bucket = firebase_admin.storage.bucket()
+    # bucket = firebase_admin.storage.bucket()
+    
+    print("Firebase Initalized")
+    return app
 
-    return app, bucket
 
-
-fireapp: firebase_admin.App = None
-bucket: _StorageClient = None
 

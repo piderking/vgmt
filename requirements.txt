@@ -1,3 +1,4 @@
 fastapi[all]
 termcolor
 tinydb
+firebase-admin

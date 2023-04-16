@@ -1,6 +1,7 @@
 {
     "vscord.enabled": true,
     "files.exclude": {
+        ".venv": true,
         "**/__pycache__": true
-    }, "python.envFile": "${workspaceFolder}/.env"
+    }, "python.envFile": "${workspaceFolder}/.venv"
 }

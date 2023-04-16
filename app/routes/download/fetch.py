@@ -8,11 +8,21 @@
 #TODO Make Fetching Async
 
 from ...data import DailyDataModel, WeeklyDataModel, UserDataModel
-from ...firebase import fireapp, bucket
+#from ...firebase import fireapp, bucket
 from ...util import config
+from uuid import uuid4
+import os
+from firebase_admin import storage
+
+
+
+# Create Firbase Bucket
+bucket = storage.bucket()
+
+
 # from firebase_admin.storage import Ex
 class Blob(object):
-    def __init__(self, file_source:str, store_in_mem: bool = True, csv_path: str = config.csv_local_path) -> None:
+    def __init__(self, file_source:str, store_in_mem: bool = True, csv_path: str = os.path.abspath("./data"), filename:str | None = None) -> None:
         """Creates a blob utility class; 
 
         Args:
@@ -22,35 +32,53 @@ class Blob(object):
         """
         self.file_source: str = file_source
         self.store_in_mem: bool = store_in_mem
-        self.csv_path: None | str = None if csv_path == config.csv_local_path else csv_path
+        self.csv_path: None | str = csv_path
+        # Set the FilePath either to the filename or firesource depending on what is passed
+        self.filename = filename if filename is not None else file_source
+        self.path = os.path.join(csv_path, file_source) if filename is None else os.path.join(csv_path, filename)
         self.data = None
         # self.data will either be a string; or a filepath (depending if self.file)
     @classmethod
-    def downloadBlob(cls, file_source:str, store_in_mem: bool = True, csv_path: str = config.csv_local_path) -> str:
+    def downloadBlob(cls, file_source:str, store_in_mem: bool = True, csv_path:str=os.path.abspath("./data"), filename:str | None = None,) -> str:
         """Download Data from Google Cloud Storage Bucket
 
         Args:
             file_source (str): file looking to download; ex: "default.txt" (include .csv)
             store_in_mem (bool) if string should be stored in memory (dev/parsing) or locally stored on site (prod) then brought into memory
-            csv_path (str, optional): path csv files are stored; if they are being stored.
+            csv_path (str, optional): path to csv directory, filename is same as downloaded unless specified
         
         Returns:
             Either csv data; in text form or file path
+            csv
+
+        Testing:
+            Store in Memory: ✅
+            Store on disk:✅
+            Memory Buffer: tbd
         """
-        try:
-            # Downloading the file to memory; else download it to a file and (it should retain its filename)
-            # TODO If this errors its probally because of save location being messed up                        
-            return bucket.blob(file_source).download_as_string() if store_in_mem else bucket.blob(file_source).download_to_filename(csv_path + 'data.csv')
-
-
-        except Exception as E:
-            print(E)        
-    def __call__(self, ) -> any:
+        if store_in_mem:
+            # Simply better
+            return bucket.blob(file_source).download_as_string()
         
-
-        # Self.data = downloading the blob;
-        self.data = self.downloadBlob(self.file_source, self.store_in_mem, self.csv_path)
-
+        # Downloading the file to memory; else download it to a file and (it should retain its filename)
+        # TODO If this errors its probally because of save location being messed up
+        if not store_in_mem and os.path.exists(os.path.join(csv_path, filename)): # file name prior set to eitiher source or custom so we only need to check once
+            tid = str(uuid4()) # If name is occupied
+            return bucket.blob(file_source).download_to_filename(os.path.join(csv_path, tid)),os.path.join(csv_path, tid)
+        else:                 
+            return bucket.blob(file_source).download_to_filename(os.path.join(csv_path, file_source if filename is None else filename)), os.path.join(csv_path, file_source if filename is None else filename) if not store_in_mem else None
+            
+      
+                 
+    def __call__(self, ) -> str or None:
+        
+        if self.store_in_mem:
+            # Self.data = downloading the blob;
+            self.data = self.downloadBlob(self.file_source, True, self.csv_path, self.fil)
+            return self.data
+        else: 
+            self.downloadBlob(self.file_source, store_in_mem=False, csv_path=self.csv_path, filename=self.filename)
+            return None
 
 def download_to_mem(file_source_blob):
     Blob("default.txt", True)

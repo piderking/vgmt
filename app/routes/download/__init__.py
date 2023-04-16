@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Response
 from ..responses import ExceptionResponse, DataResponse, UserDataResponse, DailyDataResponse
-from .fetch import fetch, fetchUser
+# from .fetch import fetch, fetchUser
 from ...util import config
 
 
@@ -28,7 +28,7 @@ def Get_Daily_Data(user:str, date:str) -> DailyDataResponse:
     Returns:
         DailyDataResponse: Data formated into tight pydantic model
     """
-    fetch(user, date, type="day")
+    #fetch(user, date, type="day")
     return DailyDataResponse(
         data=["d", "d"],
         type="clean"
@@ -45,7 +45,7 @@ def Get_Weekly_Data(user, start_date) -> DailyDataResponse:
     Returns:
         WeeklyDataResponse: Data formated into tight pydantic model course of a week
     """
-    fetch(user, start_date, type="week")
+    # fetch(user, start_date, type="week")
     return DailyDataResponse(
         data=["d", "d"],
         type="clean"
@@ -60,7 +60,7 @@ def Get_User_Data(user) -> DailyDataResponse:
     Returns:
         UserDataResponse: _description_
     """
-    fetchUser(user)
+    # fetchUser(user)
     return UserDataResponse(
         data=["d", "d"],
         type="clean"

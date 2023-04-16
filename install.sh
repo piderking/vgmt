@@ -1,6 +1,6 @@
 echo "Creating Venv...."
-python3 -m venv .env
+python3 -m venv .venv
 
 
 echo "Installing Dependcies"
-.env/bin/pip3 install -r requirements.txt
+.venv/bin/pip install -r requirements.txt
