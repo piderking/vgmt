@@ -25,6 +25,8 @@ class Blob(object):
     def __init__(self, file_source:str, store_in_mem: bool = True, csv_path: str = os.path.abspath("./data"), filename:str | None = None) -> None:
         """Creates a blob utility class; 
 
+        Downloads for Multithreaded Applications
+
         Args:
             file_source (str): file looking to download; ex: "default.txt" (include .csv)
             store_in_mem (bool) if string should be stored in memory (dev/parsing) or locally stored on site (prod) then brought into memory
@@ -74,7 +76,7 @@ class Blob(object):
         
         if self.store_in_mem:
             # Self.data = downloading the blob;
-            self.data = self.downloadBlob(self.file_source, True, self.csv_path, self.fil)
+            self.data = self.downloadBlob(self.file_source, True, self.csv_path,)
             return self.data
         else: 
             self.downloadBlob(self.file_source, store_in_mem=False, csv_path=self.csv_path, filename=self.filename)
