@@ -9,4 +9,4 @@ npm install -g localtunnel
 ### User
 
 npx localtunnel --port 8000
-
+./ngrok http 8000
