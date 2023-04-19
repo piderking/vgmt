@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from .util import config
 from .firebase import initFirebase
 """
@@ -9,13 +9,19 @@ app.add_middleware(
 """
 
 
+
+
+
 def createApp():
     # Initialize the App (so no errors on restart)
     fireapp = initFirebase()
     app = FastAPI(title=config.title, debug=config.debug)
-    
+   
     @app.get("/")
     async def root():
         return {"message": "Hello World"}
     print("API Server Initalized")
+
+    
+    
     return app, fireapp
