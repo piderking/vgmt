@@ -1,0 +1,17 @@
+username: username for display
+token: users token for account (api purposes)
+gender: male, female, other
+type_of_short_insulin: brand of short acting insulin(1 hot encoded) 
+type_of_long_insulin: brand of long acting insulin (1 hot encoded)
+time_stamp: what time was this at (for time data relation sequencing) and help visualize data
+glucose: finger stick (if applicable) 0-1000 (0.001-1)   
+gluse_timestamps_ago: max of 12 hours (38 timestamps?) when last finger stick was
+bpm: heart rate, if given to measure body activity which itself can determine stress / excersise (excersise.py)
+distance_traveled:help calculate activity (amount of movement in last timestamp in meters requires gps)
+spo%: helpful to calculate excersise 0-100% (0-1)
+stress: stress on body from user or determined with algorith if not given 0-100% (0-1)
+excersise: activity of body givenfrom user or determined with algorith if not given 0-100% (0-1)
+carbohydrates: grams of carbohydrates (preserved for 3 hours 41 timestamps?)
+carbohydrates_timestamps_ago: how many timestamps (5m ago) 
+short_insulin: units of insulin (3 units:1mL)
+short_insulin_ratio: units (3 units:1mL) per n cars

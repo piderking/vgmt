@@ -1,0 +1,5 @@
+username,piderking,token,zvFeuMgxp5gmI8mhffgUOuaQuQS2,gender,male,age,15,,,,,,,,,,,,
+time_stamp,glucose,glucose_timestamps_ago,bpm,spo%,distance_traveled,stress,excersise,carbohydrates,carbohydrates_timestamps_ago,short_insulin,short_insulin_correction,short_insulin_correction_ratio,short_insulin_ratio,short_insulin_timestamps_ago,hot_water,hot_water_timestamps_ago,long_insulin,temperature,predicted
+0:00,115,0,55,96,0,23,5,100,0,10,3,50,15,20,0,0,24,10,?
+0:05,115,1,65,96,.1,24,5,"0 ",1,0,0,50,15,21,0,0,24,10,?
+12:00,312,0,102,84,3,50,76,120,0,12,5,50,20,1,0,0,24,23,?
