@@ -12,3 +12,4 @@ def initFirebase():
 
 
 
+# TODO Use Encryption Tactics

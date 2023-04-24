@@ -1,20 +1,28 @@
+from fastapi import APIRouter
 from httpx_oauth.integrations.fastapi import OAuth2AuthorizeCallback
 from httpx_oauth.oauth2 import OAuth2
 from fastapi import FastAPI, Depends
-import uvicorn
 import json
 import requests
+
+
+dexcom_web_server = APIRouter("/dexcom")
+
+
+
+
+
 client = OAuth2("buW1km1Ig6BfWwh0S0S5phKWhmQSse8t", "TWg6r8sazz3WHQn0", "https://sandbox-api.dexcom.com/v2/oauth2/token", "https://sandbox-api.dexcom.com/v2/oauth2/token")
 oauth2_authorize_callback = OAuth2AuthorizeCallback(client, "oauth-callback")
-app = FastAPI()
+
 
 tokens, refresh_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiI5NzljNGRhMS1mOTliLTRmZGYtOTg3Mi0zOWVhOGQ1NDM1OGEiLCJhdWQiOiJodHRwczovL3NhbmRib3gtYXBpLmRleGNvbS5jb20iLCJzY29wZSI6WyJlZ3YiLCJjYWxpYnJhdGlvbiIsImRldmljZSIsImV2ZW50Iiwic3RhdGlzdGljcyIsIm9mZmxpbmVfYWNjZXNzIl0sImlzcyI6Imh0dHBzOi8vc2FuZGJveC1hcGkuZGV4Y29tLmNvbSIsImV4cCI6MTY4MTk1MjIxOCwiaWF0IjoxNjgxOTQ1MDE4LCJjbGllbnRfaWQiOiJidVcxa20xSWc2QmZXd2gwUzBTNXBoS1dobVFTc2U4dCJ9.fwcWQ5tMXajV0oW1Tc_RFvcLtp7e18qVYD3wLHP5FomvyLB1P8u4lqAxcPMC4XMi33QXFoXZvYQWfYS2oXWZr9N5EvEC_9Y3bK5xDQ_rlq9rxzuNTq9cv_m5VBdSaaa2FSc3ND3rq4nvjq3sQIAgnF_oyzUzu-xinNXLrfBmeOORNOe5nOT4lvPtzlYjNhO92HKPRzfHfGKEZLoVgZ3fpAcNs82iOPzsw0C9na1rw7vtijjSrZFyRFeE8ZuAW4Ocvdve5X8n_7ibwZJYS6TrsI1Jb5bB4jvmDRBuSqOt6avOcPaxTA0RDL6e_rKt2vHPF8rf2ct1n-rwM6PzWwq9JA", "f1749e8056cfebce02e29e903226dd17"
 
-@app.get("/")
+@dexcom_web_server.get("/")
 def root():
     return "Hello!"
 
-@app.get("/oauth-callback", name="oauth-callback")
+@dexcom_web_server.get("/oauth-callback", name="oauth-callback")
 async def oauth_callback(access_token_state=Depends(oauth2_authorize_callback)):
     token, state = access_token_state
     print(token)
@@ -24,8 +32,8 @@ async def oauth_callback(access_token_state=Depends(oauth2_authorize_callback)):
     # Do something useful
 
 
-@app.get("/bg")
-def get_bg():
+@dexcom_web_server.get("/bg/{user_id}")
+def get_bg(user_id):
     url = "https://sandbox-api.dexcom.com/v2/users/self/egvs"
 
     query = {

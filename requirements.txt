@@ -2,3 +2,4 @@ fastapi[all]
 termcolor
 tinydb
 firebase-admin
+httpx-oauth

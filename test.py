@@ -1,0 +1,15 @@
+import requests
+
+url = "https://sandbox-api.dexcom.com/v3/users/self/egvs"
+
+query = {
+  "startDate": "2022-02-06T09:12:00",
+  "endDate": "2022-02-06T09:12:35",
+}
+
+headers = {"Authorization": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiI5NzljNGRhMS1mOTliLTRmZGYtOTg3Mi0zOWVhOGQ1NDM1OGEiLCJhdWQiOiJodHRwczovL3NhbmRib3gtYXBpLmRleGNvbS5jb20iLCJzY29wZSI6WyJlZ3YiLCJjYWxpYnJhdGlvbiIsImRldmljZSIsImV2ZW50Iiwic3RhdGlzdGljcyIsIm9mZmxpbmVfYWNjZXNzIl0sImlzcyI6Imh0dHBzOi8vc2FuZGJveC1hcGkuZGV4Y29tLmNvbSIsImV4cCI6MTY4MjMwMDk0NiwiaWF0IjoxNjgyMjkzNzQ2LCJjbGllbnRfaWQiOiJidVcxa20xSWc2QmZXd2gwUzBTNXBoS1dobVFTc2U4dCJ9.QfWIKPOyz-T-5HlrMtNBe_9HwaQcdbtKtekCPp67HqYUzhk4GT8pxJ37g8gd5byWsB2VMe0e1duD3T1N7cY2vCo3eUA7Puy_PqQFBuwxVX2WyhkCSsziWDDt-4k4MJK32Hts3LwwRk8s7yD2R4NK0VeZzTPaE9Vd1z3MEbmdLmYWuezS6FX8BKQ7HnyFVqJIXJchLK0XL25KSbtig544YX89tK001HHPONO1xQc7V8lsXEd1OLR1wNnMkufxLC-NAu1lOSAuVaJYzn2uWwMshBLrWqRNd0D-rihrrf4MqwmtXwJ6wllmHn_8PmeYkYPaUPU2_Hqnm1PmsEOwxSukRw"}
+
+response = requests.get(url, headers=headers, params=query)
+
+data = response.json()
+print(data)
