@@ -1,4 +1,4 @@
-from ..util.sessionToken import SessionToken, validateWrapper
+from ...util.sessionToken import SessionToken, validateWrapper
 from pydantic import BaseModel
 import requests
 import concurrent.futures
@@ -6,7 +6,7 @@ import concurrent.futures
 
 # Outside, basic fetch url
 def load_url(url, token, timeout):
-    # url = "https://sandbox-api.dexcom.com/v3/users/self/egvs
+    #  = "https://sandbox-api.dexcom.com/v3/users/self/egvs
     query = {
     # TODO implement custom date
     "startDate": "2022-02-06T09:12:00",
@@ -33,6 +33,9 @@ class DexcomData():
         self._urls = url
         
     def fetch(self, bearer_token:str):
+        if bearer_token is None:
+            # Make sure it doesn't get past
+            return
         with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
             future_to_url = {executor.submit(load_url, url, bearer_token, 10): url for url in self.urls()}
             for future in concurrent.futures.as_completed(future_to_url):
@@ -55,8 +58,7 @@ class DexcomUser(object):
     
     
     @property
-    @validateWrapper()
-    def authToken(self, sessionToken: SessionToken, accept: bool = False) -> str | None:
+    def authToken(self, accept: bool = False) -> str | None:
 
         return self._authToken if accept else  None # Wrapper will change around parameters
         
