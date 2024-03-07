@@ -7,6 +7,7 @@
 
 ### Links
 - [Website]()
+- [Website-Static](https://piderking.github.io/vgmt/)-Only updated occasionaly for viewing purposes
 - [Website Code](https://github.com/piderking/vgmt/tree/website)
 - [Neural Network Paper]()
 - [Neural Network Code]()
