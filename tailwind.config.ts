@@ -66,6 +66,7 @@ const config = {
         5: '5 5 0%',
         7: '7 7 0%',
       },
+
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
