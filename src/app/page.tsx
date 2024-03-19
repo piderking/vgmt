@@ -72,9 +72,8 @@ export default function Home() {
           </div>
         </div>
         <div className="bg-swight h-64 flex-col flex pt-20">
-          <div className="flex-1 text-center">
+          <div className="flex-1 text-center pb-16">
             <h2 className="text-3xl pl-0.5 text-text font-medium">Predictive Solutions</h2>
-            
           </div>
           <div className="flex-1"></div>
           <div className="flex-4 flex flex-row text-center">
@@ -99,14 +98,14 @@ export default function Home() {
         <div className="h-16 bg-swight text-center">
           
         </div>
-        <div className="bg-swight h-70 pt-20 flex flex-row text-center pb-6 ">
+        <div className="bg-swight h-70 pt-32 flex flex-row text-center pb-6 ">
           <div className="flex-1"></div>
           <div className="flex-5 flex-col flex">
             <div className="flex-1">
-            <h2 className="text-3xl pl-0.5 text-text font-medium pb-8">Timeline</h2>
+            <h2 className="text-3xl pl-0.5 text-text font-medium pb-12">Timeline</h2>
             </div>
-            <div className="flex-3 ht-12 border-[#2F4963] border-2 flex flex-row">
-              <div className="flex-2 bg-[#2F4963]">
+            <div className="flex-3 ht-12 border-[#739CBF] border-2 flex flex-row">
+              <div className="flex-2 bg-[#739CBF]">
                 <p className="invisible">ds</p>
               </div>
               <div className="flex-3"></div>
