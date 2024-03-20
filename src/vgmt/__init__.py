@@ -4,5 +4,5 @@
 #   -------------------------------------------------------------
 """Python Package Template"""
 from __future__ import annotations
-
+from .config import *
 __version__ = "0.0.2"

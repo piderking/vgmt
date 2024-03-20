@@ -3,11 +3,11 @@ requires = ["flit"]
 build-backend = "flit.buildapi"
 
 [project]
-name =  "py-project-toml"
+name =  "vgmt"
 authors = [
-    {name = "Daniel Ciborowski", email = "dciborow@microsoft.com"},
+    {name = "Peter Bowman", email = "piderking8@gmail.com"},
 ]
-description = "Sample Python Project for creating a new Python Module"
+description = "VGMT Python Library for Everything Python"
 readme = "README.md"
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -21,7 +21,9 @@ classifiers = [
 ]
 requires-python = ">=3.8.1"
 dynamic = ["version"]
-
+dependencies = [
+    "docutils"
+]
 [project.optional-dependencies]
 spark = [
     "pyspark>=3.0.0"
@@ -52,7 +54,7 @@ Source = "https://github.com/microsoft/python-package-template"
 Tracker = "https://github.com/microsoft/python-package-template/issues"
 
 [tool.flit.module]
-name = "python_package"
+name = "vgmt"
 
 [tool.bandit]
 exclude_dirs = ["build","dist","tests","scripts"]
@@ -103,7 +105,7 @@ venv = "env37"
 reportMissingImports = true
 reportMissingTypeStubs = false
 
-pythonVersion = "3.7"
+pythonVersion = "3.9"
 pythonPlatform = "Linux"
 
 executionEnvironments = [
@@ -111,7 +113,6 @@ executionEnvironments = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "--cov-report xml:coverage.xml --cov src --cov-fail-under 0 --cov-append -m 'not integration'"
 pythonpath = [
   "src"
 ]

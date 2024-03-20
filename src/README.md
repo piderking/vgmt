@@ -1,1 +1,4 @@
-This directoy stores each Python Package.
+# TODO - VGMT
+- Implement Firebase
+- Implement OAuth
+- Implement Dexcom Data Fetching
