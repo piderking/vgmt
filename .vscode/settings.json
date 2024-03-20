@@ -25,5 +25,9 @@
     ],
     "isort.args": [
         "--settings-path=pyproject.toml"
-    ]
+    ],
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/.pytest_cache": true
+    }
 }
