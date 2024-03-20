@@ -1,0 +1,1 @@
+$env:GOOGLE_APPLICATION_CREDENTIALS="C:\Users\pider\OneDrive\Desktop\projects\vgmt\vgm-website\vgmt_key.json"
