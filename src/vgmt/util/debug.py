@@ -6,4 +6,7 @@ def debug(obj: object):
     Args:
         obj (object): Object to be written to STDOUT
     """
-    if DEBUG: print(obj)
+    try:
+        obj.__debug()
+    except Exception as e:
+        if DEBUG: print(obj)

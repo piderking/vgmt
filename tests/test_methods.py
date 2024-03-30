@@ -19,22 +19,33 @@ def test_version():
     print(__version__)
     assert STATUS if __version__ != None else False
 
-
 def test_threads():
     def execute_task(val):
     # do something threadable
         return val * 10
-
     r = Runner()
     t = Thread(r, self_start=False)
 
     @t.threaded
-    def runner_fcn(values):
+    def runner_fcn(values) -> list:
        results = []
-       for v in values:
+       for v in range(10):
            results.append(execute_task(v))
        return results
 
-    print(runner_fcn(list(range(1000))))
+    print(runner_fcn())
 
-    assert False
+    r.setTarget(4)
+
+    assert len(runner_fcn()) == 4
+
+
+
+def test_runner():
+
+    t = Thread(self_start=False)
+
+
+
+
+
