@@ -22,7 +22,7 @@ classifiers = [
 requires-python = ">=3.8.1"
 dynamic = ["version"]
 dependencies = [
-    "docutils"
+    "docutils", "uuid"
 ]
 [project.optional-dependencies]
 spark = [
@@ -105,7 +105,7 @@ venv = "env37"
 reportMissingImports = true
 reportMissingTypeStubs = false
 
-pythonVersion = "3.9"
+pythonVersion = "3.10.12"
 pythonPlatform = "Linux"
 
 executionEnvironments = [
