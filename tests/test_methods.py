@@ -5,7 +5,8 @@
 """This is a sample python file for testing functions from the source code."""
 from __future__ import annotations
 
-from vgmt import __version__, STATUS, Thread, Runner
+from vgmt import __version__, STATUS
+from vgmt.util import Thread
 import time
 import time
 
@@ -20,32 +21,28 @@ def test_version():
     assert STATUS if __version__ != None else False
 
 def test_threads():
-    def execute_task(val):
-    # do something threadable
-        return val * 10
-    r = Runner()
-    t = Thread(r, self_start=False)
-
-    @t.threaded
-    def runner_fcn(values) -> list:
-       results = []
-       for v in range(10):
-           results.append(execute_task(v))
-       return results
-
-    print(runner_fcn())
-
-    r.setTarget(4)
-
-    assert len(runner_fcn()) == 4
-
-
-
-def test_runner():
+    execute_task = lambda a : a * 10
 
     t = Thread(self_start=False)
 
+    @t.threaded
+    def runner_fcn(index: int,) -> list:
+        """_summary_
 
+        Args:
+            index (int): Index in which the function is in parralization
 
+        Returns:
+            list: _description_
+        """
+        print(index)
+        results = []
+        for v in range(10):
+            results.append(execute_task(v * index))
+        return results
 
+    num = 4
+    t.setTarget(num)
+    print()
+    assert len(runner_fcn()) == 4
 

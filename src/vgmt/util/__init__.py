@@ -1,1 +1,1 @@
-from .thread import Thread, Runner
+from .thread import Thread

@@ -13,31 +13,74 @@ from abc import ABC, abstractmethod
 tp = concurrent.futures.ThreadPoolExecutor(MAX_THREADS)
 
 class Thread(threading.Thread):
+    """# Parallelism Threading
+        Utility for running opperations on or observing data in seperate paralleled threads, uses decorators with concurrent.futures
+
+        ## Usage
+        ```python
+        from vgmt.util import Thread
+
+        # Create the function, other opperations like data exporting could be done here
+        # for mathmatical applications lambdas will work
+        execute_task = lambda a : a * 10
+
+        # Create an instance of the Thread object
+        # For more advanced uses using subclassing and abstraction
+        t = Thread(self_start=False)
+
+        @t.threaded # Decorator from created instance
+        def runner_fcn(index: int,) -> list: # index can also be _ if position isn't required
+            results = []
+            for v in range(10):
+                results.append(execute_task(v * index)) # Lambda used to represent functionality, not required could be (v * index * 10)
+            return results
+
+        ```
+
+
+    """
     def __init__(self, target: int = 3 , self_start:bool = True, daemon: bool = True, data: list or None = None) -> None:
+        """Initalize Parallization Util
+
+        Args:
+            target (int, optional): Starting target of threads, auto-adjusts. Defaults to 3.
+            self_start (bool, optional): If the system should autorun. Defaults to True and should stay true unless debug problems arise.
+            daemon (bool, optional): If thread is dameon. Defaults to True and should stay true unless debug problems arise.
+            data (list, optional): Data which is processed by threads and the adjusting system runs off of. Defaults to Empty List.
+        """
         self.uuid: str = uuid4()
         self.total_tasks = 0 # Total Tasks Ran
         self.target = target # Target Group Amount, 3 Default
         self.tasks = 0 # Current Amount of LIVE Tasks
         self.data = [] if data is None and type(data) == list else data # Type check the data variable and make sure, list, can be empty
+        self._work = False
 
         threading.Thread.__init__(self, name=uuid4, daemon=daemon)
-        threading.Thread
 
         # Self_Start
         if self_start:
+            self._work = True
             self.start()
 
+    def run(self, index:int=0) -> None:
+        """Abstract method, use to define you parallelism rules see example below, however, the following code segment must be included
 
-    def run(self) -> None:
-        """Not Entirely Abstract, super().run()
+        #### Required
+        ```python
+        super().run()
+        ```
+        ### Usage
+        ```python
+
+        ```
         """
-        self.removeItem()
+        self.removeItem(index=index)
 
-    def removeItem(self)-> None:
+    def removeItem(self, index:int=0)-> None:
         """### Abstract Remove Method
                 Currently remove from memory, other uses could be sending to cloud storage
         """
-        self.data.pop(0) # Abstract Method
+        self.data.pop(index) # Abstract Method
 
     def setTarget(self, val: int):
         """Set a new parallelization amount, eg: how many times the function will run depending on workload, for static threads this can remain untouched
@@ -48,6 +91,8 @@ class Thread(threading.Thread):
         self.target = val
 
     def join(self) -> None:
+        self._work = False
+
         # Kill Worker Threads
         tp.shutdown(False, cancel_futures=True)
 
@@ -67,11 +112,11 @@ class Thread(threading.Thread):
 
         """
         def wrapper(*args, **kwargs):
-            target = list(range(self.target))
+            target = list(range(self.target)) # Length
             results = {}
             # We can use a with statement to ensure threads are cleaned up promptly
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                futures = {executor.submit(fcn, [i]): idx for idx,
+                futures = {executor.submit(fcn, i): idx for idx,
                             i in enumerate(target)} # { Future: Submit}
 
                 # Amount of Tasks
@@ -111,41 +156,3 @@ class Thread(threading.Thread):
 
             return final
         return wrapper
-
-
-class Runner(ABC):
-    """
-        ## Runner Abstract Class
-        Should be used as a template in-which data processing threads can be ran off it
-
-        ### Usage
-        Initalize
-    """
-    data: list # Data to be processed
-    def __init__(self, target: int = 3, data: list or None = None) -> None:
-        self.target = target
-        self.data = [] if data is None and type(data) == list else data # Type check the data variable and make sure, list, can be empty
-
-
-
-    @abstractmethod
-    def run(self,) -> None:
-        """Abstraction, must be defined
-        ```python
-        class myRunner(Runner)"
-            def __init__():
-                super.__init__(target=3, data=[1,2,3])
-
-            @t.threaded()
-            def run(self):
-                doSomething(self.data[0]) # Oldest Piece of Data
-
-                return
-
-
-        r = myRunner()
-        t = Thread(r, self_start=False)
-        ```
-
-        """
-        pass
