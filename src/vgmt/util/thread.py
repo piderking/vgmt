@@ -8,7 +8,7 @@ import threading
 from uuid import uuid4
 import concurrent.futures
 from abc import ABC, abstractmethod
-
+import math
 
 tp = concurrent.futures.ThreadPoolExecutor(MAX_THREADS)
 
@@ -26,7 +26,7 @@ class Thread(threading.Thread):
 
         # Create an instance of the Thread object
         # For more advanced uses using subclassing and abstraction
-        t = Thread(self_start=False)
+        t = Thread(self_start=True)
 
         @t.threaded # Decorator from created instance
         def runner_fcn(index: int,) -> list: # index can also be _ if position isn't required
@@ -39,7 +39,7 @@ class Thread(threading.Thread):
 
 
     """
-    def __init__(self, target: int = 3 , self_start:bool = True, daemon: bool = True, data: list or None = None) -> None:
+    def __init__(self, target: int = 3 , self_start:bool = True, daemon: bool = True, data: list = [], basis: float = 0.75, times: int = 3) -> None:
         """Initalize Parallization Util
 
         Args:
@@ -52,9 +52,12 @@ class Thread(threading.Thread):
         self.total_tasks = 0 # Total Tasks Ran
         self.target = target # Target Group Amount, 3 Default
         self.tasks = 0 # Current Amount of LIVE Tasks
-        self.data = [] if data is None and type(data) == list else data # Type check the data variable and make sure, list, can be empty
+        self.data = [] if data is None or type(data) is not list else data # Type check the data variable and make sure, list, can be empty
         self._work = False
-
+        self.fcn = None
+        self.basis = basis
+        self.times = times
+        self.sameTarget = 0
         threading.Thread.__init__(self, name=uuid4, daemon=daemon)
 
         # Self_Start
@@ -62,7 +65,28 @@ class Thread(threading.Thread):
             self._work = True
             self.start()
 
-    def run(self, index:int=0) -> None:
+
+    def setFcn(self, fcn):
+        self.fcn = fcn # Function
+
+    def run_fcn(self,):
+        """If the data needs operations, for when their is data inside the
+        """
+        if callable(self.fcn):
+            self.fcn()
+            self.removeItem()
+
+        else:
+            # This will occur when function is not initalized (yet)
+            if self.fcn is None:
+                debug("Function not set yet -- Thread.setFcn(fcn)")
+            else:
+                debug("Function called for {} could not be executed: Not callable".format(str(type(self.fcn))))
+
+    def needsOpperation(self):
+        return True if len(self.data)/3 > 0 else False #
+
+    def run(self,) -> None:
         """Abstract method, use to define you parallelism rules see example below, however, the following code segment must be included
 
         #### Required
@@ -74,13 +98,32 @@ class Thread(threading.Thread):
 
         ```
         """
-        self.removeItem(index=index)
+        while self._work:
+            if self.needsOpperation():
+                if len(self.data) >= self.target:
+                    self.sameTarget += 1
 
-    def removeItem(self, index:int=0)-> None:
+                    if self.sameTarget == self.times and math.ceil(self.target * (1+self.basis)) < len(self.data):
+                        self.setTarget(math.ceil(self.target * (1+self.basis))) # Increate the target if the value is greater than basis increate of the target and the target has been reached 3 times
+
+                    self.run_fcn()
+                else:
+                    self.setTarget(len(self.data))
+                    self.run_fcn()
+
+
+    def removeItem(self)-> None:
         """### Abstract Remove Method
                 Currently remove from memory, other uses could be sending to cloud storage
         """
-        self.data.pop(index) # Abstract Method
+        if self.needsOpperation() and type(self.data) is list:
+            # debug(self.data[0]) # See outcoming data
+            for i in range(self.target):
+                if len(self.data) > 0:
+                    self.data.pop(0) # Abstract Method
+                else:
+                    raise IndexError("The data list does not contain the index 0, if this error went wrong file bug report: \n\t Data::{}".format(str(self.data)))
+
 
     def setTarget(self, val: int):
         """Set a new parallelization amount, eg: how many times the function will run depending on workload, for static threads this can remain untouched
@@ -88,6 +131,7 @@ class Thread(threading.Thread):
         Args:
             val (int):
         """
+        self.sameTarget = 0
         self.target = val
 
     def join(self) -> None:
@@ -97,7 +141,7 @@ class Thread(threading.Thread):
         tp.shutdown(False, cancel_futures=True)
 
         # Display Debug Information
-        debug("Thread Information for Thread::{}:\n\tTotal Opperations Run: {}\n\tOpperations Running Curently: {}".format(self.uuid, self.total_tasks, self.tasks))
+        debug("Thread Information for Thread::{}:\n\tTotal Opperations Run: {}\n\tOpperations Running Curently: {}\n\tTarget Amount: {}".format(self.uuid, self.total_tasks, self.tasks, self.target))
 
         # Finish with the thread joining
         return super().join(None)
@@ -106,17 +150,18 @@ class Thread(threading.Thread):
         if DEBUG:
             print("Thread Information for Thread::{}:\n\tTotal Opperations Run: {}\n\tOpperations Running Curently: {}".format(self.uuid, self.total_tasks, self.tasks))
 
+
     def threaded(self: Thread, fcn):
         """ ## Threading Decorator
             Runs a paralized task for the amount in the target
 
         """
         def wrapper(*args, **kwargs):
-            target = list(range(self.target)) # Length
+            target = list(range(self.target)) # range(self.target if len(self.data)/self.target >= 1 else len(self.data))
             results = {}
             # We can use a with statement to ensure threads are cleaned up promptly
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                futures = {executor.submit(fcn, i): idx for idx,
+                futures = {executor.submit(fcn, i, self.data[i]): idx for idx,
                             i in enumerate(target)} # { Future: Submit}
 
                 # Amount of Tasks
@@ -127,7 +172,7 @@ class Thread(threading.Thread):
                 self.total_tasks += tasks
                 # Rounding
                 tenth = round(tasks / 10)
-                debug('Formed pool of {} tasks'.format(tasks))
+                # debug('Formed pool of {} tasks'.format(tasks))
 
                 for idx, future in enumerate(concurrent.futures.as_completed(futures)):
                     i = futures[future] # Future
@@ -146,8 +191,6 @@ class Thread(threading.Thread):
                         debug('{} generated an exception: {}'.format(
                             target[i], exc))
 
-                    if DEBUG and tenth != 0 and idx != 0 and idx % tenth == 0:
-                        debug('{}% Done'.format((idx // tenth) * 10))
 
             # sort and put in array
             final = []

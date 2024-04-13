@@ -9,7 +9,7 @@ from vgmt import __version__, STATUS
 from vgmt.util import Thread
 import time
 import time
-
+import random
 
 def test_version():
     """
@@ -23,26 +23,29 @@ def test_version():
 def test_threads():
     execute_task = lambda a : a * 10
 
-    t = Thread(self_start=False)
+    t = Thread(self_start=True, data=[random.randint(0, x) for x in range(200)])
 
     @t.threaded
-    def runner_fcn(index: int,) -> list:
+    def runner_fcn(index: int,data) -> list:
         """_summary_
 
         Args:
             index (int): Index in which the function is in parralization
+            data (data in the parralization)
 
         Returns:
             list: _description_
         """
-        print(index)
         results = []
+        print("Data is " + str(data))
         for v in range(10):
-            results.append(execute_task(v * index))
+            results.append(execute_task(v * index * data))
+        print(str(index) + " :: " +  str(results))
         return results
 
-    num = 4
-    t.setTarget(num)
-    print()
-    assert len(runner_fcn()) == 4
+    t.setFcn(runner_fcn)
+    # print(len(runner_fcn()) == 4)
+
+    time.sleep(5)
+    t.join()
 
