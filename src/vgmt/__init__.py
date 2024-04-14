@@ -5,7 +5,7 @@
 """VGMT Library"""
 from __future__ import annotations
 from .config import *
-
+from .data import *
 from .util import *
 __version__ = "0.0.2"
 

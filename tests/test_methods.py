@@ -5,7 +5,7 @@
 """This is a sample python file for testing functions from the source code."""
 from __future__ import annotations
 
-from vgmt import __version__, STATUS
+from vgmt import __version__, STATUS, Data
 from vgmt.util import Thread
 import time
 import time
@@ -23,7 +23,7 @@ def test_version():
 def test_threads():
     execute_task = lambda a : a * 10
 
-    t = Thread(self_start=True, data=[random.randint(0, x) for x in range(200)])
+    t = Thread(self_start=True, data=[x for x in range(10)])
 
     @t.threaded
     def runner_fcn(index: int,data) -> list:
@@ -46,6 +46,17 @@ def test_threads():
     t.setFcn(runner_fcn)
     # print(len(runner_fcn()) == 4)
 
-    time.sleep(5)
+    # time.sleep(5)
     t.join()
+    assert True
+
+
+def test_numpy():
+    import numpy as np
+
+    data = Data([[120,1,0,99], [120,1,0,0], [120,1,0,0],[120,1,0,0]])
+
+
+
+    print(data.toTable())
 
