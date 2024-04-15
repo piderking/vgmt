@@ -56,5 +56,5 @@ def test_numpy():
 
     data = Data([[120,1,0,99], [120,1,0,0], [120,1,0,0],[120,1,0,0]])
 
-
+    print(data.getMemorySize(reduce=1))
 

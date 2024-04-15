@@ -2,13 +2,19 @@ from typing import Any
 from ..util import debug
 from collections import UserList
 import numpy as np
+
 class Data(UserList):
 
     def __init__(self, data, key: str or list = "DEFAULT"):
         self.key: str or list = key if not key == "DEFAULT" else ( # Default Data Point Key
                 "Time_Stamp", "Blood_Sugar", "Heat_Rate", "Insulin_On_Board"
         )
-        super().__init__(data)
+        if (type(data)):
+            if len(data) == len(self.key):
+                print(len(data) == len(self.key))
+                super().__init__(data)
+            else:
+                super().__init__([])
 
     def __setitem__(self, index, item):
         self.data[index] = item
@@ -22,9 +28,20 @@ class Data(UserList):
 
         Returns:
             ndarray: Numpy Representation of the list array
-        """
-        return np.array(self.data)
 
+        """
+
+        return np.array(self.data, dtype={'names': tuple(self.key),'formats':(tuple([np.int16 for _ in range(len(self.key))]))})
+
+    def getMemorySize(self, reduce:int=8000):
+        """Get amount of bytes in the array
+
+        Arguements:
+            Reduce (int): bits/unit (8000/kilobyte)
+        Returns:
+            int: Size of Dataset
+        """
+        return self.numpy().nbytes / ( reduce )
     def toOneHot(self):
         a = self.numpy()
 
@@ -41,6 +58,11 @@ class Data(UserList):
         return one_hot
 
     def toTable(self):
+        """Create a Table ()
+
+        Returns:
+            _type_: _description_
+        """
         dts = {'names': tuple(self.key),'formats':(np.int16, np.int16, np.int16, np.int16)}
 
         array = np.array(self.data, dtype=dts)
