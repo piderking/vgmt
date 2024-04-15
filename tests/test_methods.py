@@ -58,5 +58,3 @@ def test_numpy():
 
 
 
-    print(data.toTable())
-

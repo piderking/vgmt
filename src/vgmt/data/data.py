@@ -1,5 +1,3 @@
-
-
 from typing import Any
 from ..util import debug
 from collections import UserList
