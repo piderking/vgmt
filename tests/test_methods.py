@@ -5,8 +5,9 @@
 """This is a sample python file for testing functions from the source code."""
 from __future__ import annotations
 
-from vgmt import __version__, STATUS, Data
+from vgmt import SData, __version__
 from vgmt.util import Thread
+from vgmt.config import  STATUS
 import time
 import time
 import random
@@ -21,40 +22,22 @@ def test_version():
     assert STATUS if __version__ != None else False
 
 def test_threads():
-    execute_task = lambda a : a * 10
 
-    t = Thread(self_start=True, data=[x for x in range(10)])
+    t = Thread(self_start=True, data=[x for x in range(1000)])
 
-    @t.threaded
-    def runner_fcn(index: int,data) -> list:
-        """_summary_
-
-        Args:
-            index (int): Index in which the function is in parralization
-            data (data in the parralization)
-
-        Returns:
-            list: _description_
-        """
-        results = []
-        print("Data is " + str(data))
-        for v in range(10):
-            results.append(execute_task(v * index * data))
-        print(str(index) + " :: " +  str(results))
-        return results
-
-    t.setFcn(runner_fcn)
-    # print(len(runner_fcn()) == 4)
-
-    # time.sleep(5)
+    time.sleep(5)
     t.join()
+
+    print(t.results)
+    for x in t.results:
+        print("The target was {} during the datasets from percents {}% to {}%".format(len(x), x[0]/10, x[-1]/10))
     assert True
 
 
 def test_numpy():
     import numpy as np
 
-    data = Data([[120,1,0,99], [120,1,0,0], [120,1,0,0],[120,1,0,0]])
+    data = SData([[120,1,0,99], [120,1,0,0], [120,1,0,0],[120,1,0,0]])
 
     print(data.getMemorySize(reduce=1))
 

@@ -3,7 +3,7 @@ from ..util import debug
 from collections import UserList
 import numpy as np
 
-class Data(UserList):
+class SData(UserList):
 
     def __init__(self, data, key: str or list = "DEFAULT"):
         self.key: str or list = key if not key == "DEFAULT" else ( # Default Data Point Key

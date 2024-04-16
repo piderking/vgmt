@@ -53,8 +53,8 @@ class Thread(threading.Thread):
         self.target = target # Target Group Amount, 3 Default
         self.tasks = 0 # Current Amount of LIVE Tasks
         self.data = [] if data is None or type(data) is not list else data # Type check the data variable and make sure, list, can be empty
+        self.results = []
         self._work = False
-        self.fcn = None
         self.basis = basis
         self.times = times
         self.sameTarget = 0
@@ -69,11 +69,16 @@ class Thread(threading.Thread):
     def setFcn(self, fcn):
         self.fcn = fcn # Function
 
+    def fcn(self, i, d):
+        print("Index: {} Data, {}".format(str(i), str(d)))
+
+        return [d]
+
     def run_fcn(self,):
         """If the data needs operations, for when their is data inside the
         """
         if callable(self.fcn):
-            self.fcn()
+            self.threaded(self.fcn)()
             self.removeItem()
 
         else:
@@ -118,6 +123,7 @@ class Thread(threading.Thread):
         """
         if self.needsOpperation() and type(self.data) is list:
             # debug(self.data[0]) # See outcoming data
+            # TODO Optimize Algorithm prediction thread
             for i in range(self.target):
                 if len(self.data) > 0:
                     self.data.pop(0) # Abstract Method
@@ -196,6 +202,6 @@ class Thread(threading.Thread):
             final = []
             for k, v in sorted(results.items()):
                 final.append(v)
-
+            self.results.append(final)
             return final
         return wrapper
