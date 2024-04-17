@@ -3,18 +3,13 @@ from ..util import debug
 from collections import UserList
 import numpy as np
 
-class SData(UserList):
+class Data(UserList):
 
-    def __init__(self, data, key: str or list = "DEFAULT"):
-        self.key: str or list = key if not key == "DEFAULT" else ( # Default Data Point Key
-                "Time_Stamp", "Blood_Sugar", "Heat_Rate", "Insulin_On_Board"
-        )
-        if (type(data)):
-            if len(data) == len(self.key):
-                print(len(data) == len(self.key))
-                super().__init__(data)
-            else:
-                super().__init__([])
+    def __init__(self, data: list):
+        if (type(data) is list):
+            super().__init__(data) # Pass to UserList
+        else:
+            super().__init__([])
 
     def __setitem__(self, index, item):
         self.data[index] = item
@@ -23,6 +18,9 @@ class SData(UserList):
 
         self.data.append(item)
 
+    def pop(self, index=0):
+        self.data.pop(index)
+        print("Poping")
     def numpy(self):
         """Get array as a numpy array
 
@@ -31,7 +29,7 @@ class SData(UserList):
 
         """
 
-        return np.array(self.data, dtype={'names': tuple(self.key),'formats':(tuple([np.int16 for _ in range(len(self.key))]))})
+        return np.array(self.data,)
 
     def getMemorySize(self, reduce:int=8000):
         """Get amount of bytes in the array
@@ -57,14 +55,3 @@ class SData(UserList):
 
         return one_hot
 
-    def toTable(self):
-        """Create a Table ()
-
-        Returns:
-            _type_: _description_
-        """
-        dts = {'names': tuple(self.key),'formats':(np.int16, np.int16, np.int16, np.int16)}
-
-        array = np.array(self.data, dtype=dts)
-
-        return array

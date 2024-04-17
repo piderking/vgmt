@@ -4,8 +4,8 @@
 #   -------------------------------------------------------------
 """VGMT Library"""
 from __future__ import annotations
-from .data import SData
-from .util import Thread
+
+from .util import Thread, Data
 __version__ = "0.0.2"
 
 

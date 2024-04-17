@@ -9,6 +9,7 @@ from uuid import uuid4
 import concurrent.futures
 from abc import ABC, abstractmethod
 import math
+import numpy as np
 
 tp = concurrent.futures.ThreadPoolExecutor(MAX_THREADS)
 
@@ -70,9 +71,8 @@ class Thread(threading.Thread):
         self.fcn = fcn # Function
 
     def fcn(self, i, d):
-        print("Index: {} Data, {}".format(str(i), str(d)))
 
-        return [d]
+        return [d, i]
 
     def run_fcn(self,):
         """If the data needs operations, for when their is data inside the
@@ -108,6 +108,7 @@ class Thread(threading.Thread):
                 if len(self.data) >= self.target:
                     self.sameTarget += 1
 
+                    # TODO Optimize Algorithm prediction thread
                     if self.sameTarget == self.times and math.ceil(self.target * (1+self.basis)) < len(self.data):
                         self.setTarget(math.ceil(self.target * (1+self.basis))) # Increate the target if the value is greater than basis increate of the target and the target has been reached 3 times
 
@@ -123,7 +124,7 @@ class Thread(threading.Thread):
         """
         if self.needsOpperation() and type(self.data) is list:
             # debug(self.data[0]) # See outcoming data
-            # TODO Optimize Algorithm prediction thread
+
             for i in range(self.target):
                 if len(self.data) > 0:
                     self.data.pop(0) # Abstract Method
