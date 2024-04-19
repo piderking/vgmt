@@ -35,35 +35,10 @@ def test_threads():
     print(t.results)
     assert True
 
+def test_server():
+    from vgmt.dexcom.server import DexcomOAuthServer
 
+    d = DexcomOAuthServer()
 
-from oauth2_client.credentials_manager import CredentialManager, ServiceInformation
+    time.sleep(10)
 
-def test_oauth():
-    scopes = ['scope_1', 'scope_2']
-
-    service_information = ServiceInformation(BASE_URL + '/v2/oauth2/login',
-                                            BASE_URL + '/v2/oauth2/token',
-                                            CLIENT["dexcom-id"],
-                                            CLIENT["dexcom-secret"],
-                                            scopes)
-    print(BASE_URL + '/v2/oauth2/login',
-                                            BASE_URL + '/v2/oauth2/token',
-                                            CLIENT["dexcom-id"],
-                                            CLIENT["dexcom-secret"],
-                                            scopes)
-    manager = CredentialManager(service_information,
-                                proxies=dict(http='http://localhost:3128', https='http://localhost:3128'))
-    redirect_uri = 'http://somewhere.io:8080/oauth/code'
-
-    # Builds the authorization url and starts the local server according to the redirect_uri parameter
-    url = manager.init_authorize_code_process(redirect_uri, 'state_test')
-    print('Open this url in your browser\n%s', url)
-
-    code = manager.wait_and_terminate_authorize_code_process()
-    # From this point the http server is opened on 8080 port and wait to receive a single GET request
-    # All you need to do is open the url and the process will go on
-    # (as long you put the host part of your redirect uri in your host file)
-    # when the server gets the request with the code (or error) in its query parameters
-    print('Code got = %s', code)
-    manager.init_with_authorize_code(redirect_uri, code)
