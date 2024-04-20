@@ -12,122 +12,21 @@ import json
 from ..util.debug import debug
 class DexcomOAuthServer(threading.Thread):
     app = Flask(__name__)
-    path = os.path.join(os.path.abspath("."), "token.txt")
     data = []
     unsorted_data = []
 
-    def requestDayData(self, year: str="2022", month: str="01", day:str="01", asList: bool = False):
-
-        self.waitForToken()
-
-        if self.token is None:
-            raise Exception("Token in Undefined")
-        _year, _month, _day = (int(year), int(month), int(day)) # Ensure Integers
-
-
-        max_day_value = 1
-
-            # Get Max value for a day in given month
-        if _month == 1 or _month == 3 or _month == 5 or _month == 7 or _month == 8 or _month == 10 or _month == 12:
-            max_day_value = 31
-        elif _month == 4 or _month == 6 or _month == 9 or _month == 11:
-            max_day_value = 30
-        elif _year % 4 == 0:
-            max_day_value = 28
-        else:
-            max_day_value = 28
-
-        if len(month) != 1 and len(month) != 2: # Neither 1 nor 2 in lengt
-            abort(400)
-        # Next Day
-        next_day = str(_day+1)
-
-        # Max Sure format 01
-        if len(month) == 1:
-            month = "0" + month
-        if len(day) == 1:
-            day = "0" + day
-        if len(next_day) == 1:
-            next_day = "0" + next_day
-
-        if _day > max_day_value or _day + 1 > max_day_value:
-            raise Exception("Day is to large, request {}/{}/{}, max is {}/{}/{}".format(month, day, year, month, max_day_value, year))
-
-        query = {
-            "startDate": "{}-{}-{}T00:00:00".format(year, month, day),
-            "endDate": "{}-{}-{}T23:59:59".format(year, month, next_day)
-        }
-        headers = {"Authorization": "Bearer {}".format(self.token)}
-
-        response = requests.get(BASE_URL+"/v3/users/self/egvs", headers=headers, params=query)
-
-        if len(response.content) == 0:
-            raise Exception("Token Invalid, try /erase and restarting it") # Make Custom Exception
-        if asList:
-            tList = []
-            for i in reversed(response.json()["records"]):
-                # Reverse List (Bottom Timestamp is the Lowest)
-                tList.append([i["systemTime"], i["value"], i["trendRate"]])
-                self.unsorted_data.append([i["systemTime"], i["value"], i["trendRate"]]) # TODO The whole dataset (not sorted by month)
-            self.data.append(tList) # TODO If tList is the whole months day
-            print("TList is {} terms long".format(str(len(tList))))
-            return tList # Return the tList response as data
-        return response
-    def requestData(self, year: str, month: str or None, asList: bool = False):
-
-        self.waitForToken()
-
-        if self.token is None:
-            raise Exception("Token in Undefined")
-        _year, _month = (int(year), int(month)) # Ensure Integers
-
-
-        max_day_value = "01"
-
-            # Get Max value for a day in given month
-        if _month == 1 or _month == 3 or _month == 5 or _month == 7 or _month == 8 or _month == 10 or _month == 12:
-            max_day_value = "31"
-        elif _month == 4 or _month == 6 or _month == 9 or _month == 11:
-            max_day_value = "30"
-        elif _year % 4 == 0:
-            max_day_value = "28"
-        else:
-            max_day_value = "28"
-
-        if len(month) != 1 and len(month) != 2: # Neither 1 nor 2 in lengt
-            abort(400)
-
-        if len(month) == 1:
-            month = "0" + month
-
-
-
-        query = {
-            "startDate": "{}-{}-01T00:00:00".format(year, month),
-            "endDate": "{}-{}-{}T23:59:59".format(year, month, max_day_value)
-        }
-
-        headers = {"Authorization": "Bearer {}".format(self.token)}
-
-        response = requests.get(BASE_URL+"/v3/users/self/egvs", headers=headers, params=query)
-
-        if len(response.content) == 0:
-            raise Exception("Token Invalid, try /erase and restarting it") # Make Custom Exception
-        if asList:
-            tList = []
-            for i in reversed(response.json()["records"]):
-                # Reverse List (Bottom Timestamp is the Lowest)
-                tList.append([i["systemTime"], i["value"], i["trendRate"]])
-                self.unsorted_data.append([i["systemTime"], i["value"], i["trendRate"]]) # TODO The whole dataset (not sorted by month)
-            self.data.append(tList) # TODO If tList is the whole months day
-            print("TList is {} terms long".format(str(len(tList))))
-            return tList # Return the tList response as data
-        return response
     def __init__(self, secret_key: str or None = None, self_start:bool = True) -> None:
         self.token = None
+        self.refresh_token = None
+        self.path = os.path.join(os.path.abspath("."), "token.json")
+
+
         if os.path.exists(self.path):
-            if len(open(self.path, "r").read()) > 0:
-                self.token = open(self.path, "r").read().strip()
+            _json = json.loads(open(self.path, "rt").read())
+
+            self.token = _json["token"]
+            self.refresh_token = _json["refresh_token"]
+
         self.secret_key = secret_key if type(secret_key) is str else str(uuid4())
         self.app.config['SECRET_KEY'] = self.secret_key
         self.app.config['OAUTH2_PROVIDERS'] = {
@@ -247,12 +146,12 @@ class DexcomOAuthServer(threading.Thread):
 
             oauth2_token = response.json().get('access_token')
             self.token  = response.json().get('access_token')
+            self.refresh_token  = response.json().get('refresh_token')
             if not oauth2_token:
                 debug("Fatal Error in Token: Something must have gone wrong")
                 abort(401)
 
-            with open(self.path, "w") as w:
-                w.write(self.token)
+            self.writeTokens()
 
             return redirect(url_for('index'))
 
@@ -263,11 +162,158 @@ class DexcomOAuthServer(threading.Thread):
         if self_start:
             debug("Dexcon OAuth Sever Completed", type="info")
             self.start() # Starting the Server
+    def writeTokens(self):
+        """Writes the otken to JSON
+        ```python
+        # File Location is at
+        self.path
+        ```
+        """
+        with open(self.path, "w") as w:
+                w.write(str({
+                    "token": str(self.token),
+                    "refresh_token": str(self.refresh_token)
+                }).replace("'", '"'))
+
+    def refreshToken(self): # TODO Confirm works
+        if self.refreshToken is None:
+            debug("Refresh Token is Missing! Can't refresh", type="critical")
+            raise Warning("Refresh Token Missing")
+
+
+        payload = {
+            "grant_type": "refresh_token",
+            "code": self.refresh_token,
+            "redirect_uri": "http://localhost:5000/callback/dexcom",
+            "client_id": CLIENT["dexcom-id"],
+            "client_secret": CLIENT["dexcom-secret"]
+        }
+
+
+        headers = {"Content-Type": "application/x-www-form-urlencoded"}
+
+        response = requests.post(BASE_URL+"/v2/oauth2/token", data=payload, headers=headers)
+
+        # The callback will be called and will write the refresh token
+
+
+    def requestDayData(self, year: str="2022", month: str="01", day:str="01", asList: bool = False):
+
+        self.waitForToken()
+
+        if self.token is None:
+            raise Exception("Token in Undefined")
+        _year, _month, _day = (int(year), int(month), int(day)) # Ensure Integers
+
+
+        max_day_value = 1
+
+            # Get Max value for a day in given month
+        if _month == 1 or _month == 3 or _month == 5 or _month == 7 or _month == 8 or _month == 10 or _month == 12:
+            max_day_value = 31
+        elif _month == 4 or _month == 6 or _month == 9 or _month == 11:
+            max_day_value = 30
+        elif _year % 4 == 0:
+            max_day_value = 28
+        else:
+            max_day_value = 28
+
+        if len(month) != 1 and len(month) != 2: # Neither 1 nor 2 in lengt
+            abort(400)
+        # Next Day
+        next_day = str(_day+1)
+
+        # Max Sure format 01
+        if len(month) == 1:
+            month = "0" + month
+        if len(day) == 1:
+            day = "0" + day
+        if len(next_day) == 1:
+            next_day = "0" + next_day
+
+        if _day > max_day_value or _day + 1 > max_day_value:
+            raise Exception("Day is to large, request {}/{}/{}, max is {}/{}/{}".format(month, day, year, month, max_day_value, year))
+
+        query = {
+            "startDate": "{}-{}-{}T00:00:00".format(year, month, day),
+            "endDate": "{}-{}-{}T23:59:59".format(year, month, next_day)
+        }
+        headers = {"Authorization": "Bearer {}".format(self.token)}
+
+        response = requests.get(BASE_URL+"/v3/users/self/egvs", headers=headers, params=query)
+
+        if len(response.content) == 0: # Invalid Token
+            debug("Invalid Token, waiting on User to regenerate", type="warn")
+            self.token = None
+            self.waitForToken() # Waiting for webserver to activate the token
+            #raise Exception("Token Invalid, try /erase and restarting it") # Make Custom Exception
+        if asList:
+            tList = []
+            for i in reversed(response.json()["records"]):
+                # Reverse List (Bottom Timestamp is the Lowest)
+                tList.append([i["systemTime"], i["value"], i["trendRate"]])
+                self.unsorted_data.append([i["systemTime"], i["value"], i["trendRate"]]) # TODO The whole dataset (not sorted by month)
+            self.data.append(tList) # TODO If tList is the whole months day
+            print("TList is {} terms long".format(str(len(tList))))
+            return tList # Return the tList response as data
+        return response
+    def requestData(self, year: str, month: str or None, asList: bool = False):
+
+        self.waitForToken()
+
+        if self.token is None:
+            raise Exception("Token in Undefined")
+        _year, _month = (int(year), int(month)) # Ensure Integers
+
+
+        max_day_value = "01"
+
+            # Get Max value for a day in given month
+        if _month == 1 or _month == 3 or _month == 5 or _month == 7 or _month == 8 or _month == 10 or _month == 12:
+            max_day_value = "31"
+        elif _month == 4 or _month == 6 or _month == 9 or _month == 11:
+            max_day_value = "30"
+        elif _year % 4 == 0:
+            max_day_value = "28"
+        else:
+            max_day_value = "28"
+
+        if len(month) != 1 and len(month) != 2: # Neither 1 nor 2 in lengt
+            abort(400)
+
+        if len(month) == 1:
+            month = "0" + month
+
+
+
+        query = {
+            "startDate": "{}-{}-01T00:00:00".format(year, month),
+            "endDate": "{}-{}-{}T23:59:59".format(year, month, max_day_value)
+        }
+
+        headers = {"Authorization": "Bearer {}".format(self.token)}
+
+        response = requests.get(BASE_URL+"/v3/users/self/egvs", headers=headers, params=query)
+
+        if len(response.content) == 0 or response.content == b'':
+            raise Exception("Token Invalid, try /erase and restarting it") # Make Custom Exception
+        if asList:
+            tList = []
+            for i in reversed(response.json()["records"]):
+                # Reverse List (Bottom Timestamp is the Lowest)
+                tList.append([i["systemTime"], i["value"], i["trendRate"]])
+                self.unsorted_data.append([i["systemTime"], i["value"], i["trendRate"]]) # TODO The whole dataset (not sorted by month)
+            self.data.append(tList) # TODO If tList is the whole months day
+            print("TList is {} terms long".format(str(len(tList))))
+            return tList # Return the tList response as data
+        return response
+
 
     def waitForToken(self,):
+        debug("Dexcom OAuth-Token Not Found", type="info")
         while self.token is None:
             pass
-        debug("Dexcom OAuth-Token Found", type="info")
+        debug("Dexcom OAuth-Token Found", type="sucess")
         return self.token
 
     def run(self):

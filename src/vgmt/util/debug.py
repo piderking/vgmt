@@ -4,6 +4,7 @@ colors = {
     "error":Fore.RED,
     "critical":Fore.BLACK+Back.RED,
     "ok":Fore.YELLOW,
+    "warn":Fore.LIGHTRED_EX,
     "sucess":Fore.GREEN,
     "general":Fore.BLACK,
     "info":Fore.BLUE,
