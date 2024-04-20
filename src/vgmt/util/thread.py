@@ -55,6 +55,7 @@ class Thread(threading.Thread):
         self.tasks = 0 # Current Amount of LIVE Tasks
         self.data = [] if data is None or type(data) is not list else data # Type check the data variable and make sure, list, can be empty
         self.results = []
+        self.unsorted_results = []
         self._work = False
         self.basis = basis
         self.times = times
@@ -203,6 +204,7 @@ class Thread(threading.Thread):
             final = []
             for k, v in sorted(results.items()):
                 final.append(v)
+                self.unsorted_results.append(v)
             self.results.append(final)
             return final
         return wrapper

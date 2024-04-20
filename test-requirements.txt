@@ -17,4 +17,3 @@ requests
 SQLAlchemy
 typing_extensions
 urllib3
-Werkzeug
