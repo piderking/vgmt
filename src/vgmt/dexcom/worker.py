@@ -1,14 +1,17 @@
 from ..util import Thread
+from ..util.debug import debug
 from .server import DexcomOAuthServer
 import math
 class DexcomWorker(Thread):
 
     def __init__(self, self_start: bool = True) -> None:
         self.self_start = self_start
+        self.unsorted_data = []
         self.server = DexcomOAuthServer(self_start=self_start) # Initalize the Server
         super().__init__(self_start=self_start)
 
     def start(self) -> None:
+        debug("Starting Dexcom Thread", type="info")
         if not self.self_start: self.server.start() # Start the Server
         return super().start()
 
@@ -26,16 +29,17 @@ class DexcomWorker(Thread):
         ```
         ### Usage
         ```python
-
         ```
         """
+        debug("Running Dexcom Worker Thread", type="info")
+
         while self._work:
             for new_data in self.server.data: # Take new data and transfer it from the server
-                    # print("Adding Additional Data")
-                    self.data.append(new_data)
+                    self.data.append(new_data) # TODO Sorted Data
                     self.server.data.pop(0)
             if self.needsOpperation():
                 if len(self.data) >= self.target:
+
                     self.sameTarget += 1
 
                     # TODO Optimize Algorithm prediction thread

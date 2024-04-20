@@ -89,20 +89,20 @@ class Thread(threading.Thread):
             else:
                 debug("Function called for {} could not be executed: Not callable".format(str(type(self.fcn))))
 
-    def needsOpperation(self):
-        return True if len(self.data)/3 > 0 else False #
+    def needsOpperation(self) -> bool:
+        """
+        Determines if the data is long enough for an opperation
+
+        #### Returns:
+            Literal (boolean): If data has terms in it
+        """
+        return True if len(self.data) > 0 else False
+
 
     def run(self,) -> None:
-        """Abstract method, use to define you parallelism rules see example below, however, the following code segment must be included
-
-        #### Required
-        ```python
-        super().run()
-        ```
-        ### Usage
-        ```python
-
-        ```
+        """
+        Default running method for executing function, abstract layer, can be changed.
+        #### Don't call function when replacing it when sub-classing
         """
         while self._work:
             if self.needsOpperation():
@@ -120,8 +120,8 @@ class Thread(threading.Thread):
 
 
     def removeItem(self)-> None:
-        """### Abstract Remove Method
-                Currently remove from memory, other uses could be sending to cloud storage
+        """ ### Abstract Remove Method
+                Currently removes from memory, destination could change perhaps
         """
         if self.needsOpperation() and type(self.data) is list:
             # debug(self.data[0]) # See outcoming data
@@ -133,14 +133,19 @@ class Thread(threading.Thread):
                     raise IndexError("The data list does not contain the index 0, if this error went wrong file bug report: \n\t Data::{}".format(str(self.data)))
 
 
-    def setTarget(self, val: int):
+    def setTarget(self, val: int) -> int:
         """Set a new parallelization amount, eg: how many times the function will run depending on workload, for static threads this can remain untouched
 
         Args:
             val (int):
+
+        Returns:
+            (int): Value of self.target, amount of function calls per-loop
         """
         self.sameTarget = 0
         self.target = val
+
+        return self.target
 
     def join(self) -> None:
         self._work = False
@@ -149,7 +154,7 @@ class Thread(threading.Thread):
         tp.shutdown(False, cancel_futures=True)
 
         # Display Debug Information
-        debug("Thread Information for Thread::{}:\n\tTotal Opperations Run: {}\n\tOpperations Running Curently: {}\n\tTarget Amount: {}".format(self.uuid, self.total_tasks, self.tasks, self.target))
+        debug("Thread Information for Thread::{}:\n\tTotal Opperations Run: {}\n\tOpperations Running Curently: {}\n\tTarget Amount: {}".format(self.uuid, self.total_tasks, self.tasks, self.target), type="info")
 
         # Finish with the thread joining
         return super().join(None)

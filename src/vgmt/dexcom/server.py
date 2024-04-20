@@ -9,13 +9,76 @@ import requests
 import sys
 from uuid import uuid4
 import json
-
+from ..util.debug import debug
 class DexcomOAuthServer(threading.Thread):
     app = Flask(__name__)
     path = os.path.join(os.path.abspath("."), "token.txt")
     data = []
+    unsorted_data = []
 
+    def requestDayData(self, year: str="2022", month: str="01", day:str="01", asList: bool = False):
+
+        self.waitForToken()
+
+        if self.token is None:
+            raise Exception("Token in Undefined")
+        _year, _month, _day = (int(year), int(month), int(day)) # Ensure Integers
+
+
+        max_day_value = 1
+
+            # Get Max value for a day in given month
+        if _month == 1 or _month == 3 or _month == 5 or _month == 7 or _month == 8 or _month == 10 or _month == 12:
+            max_day_value = 31
+        elif _month == 4 or _month == 6 or _month == 9 or _month == 11:
+            max_day_value = 30
+        elif _year % 4 == 0:
+            max_day_value = 28
+        else:
+            max_day_value = 28
+
+        if len(month) != 1 and len(month) != 2: # Neither 1 nor 2 in lengt
+            abort(400)
+        # Next Day
+        next_day = str(_day+1)
+
+        # Max Sure format 01
+        if len(month) == 1:
+            month = "0" + month
+        if len(day) == 1:
+            day = "0" + day
+        if len(next_day) == 1:
+            next_day = "0" + next_day
+
+        if _day > max_day_value or _day + 1 > max_day_value:
+            raise Exception("Day is to large, request {}/{}/{}, max is {}/{}/{}".format(month, day, year, month, max_day_value, year))
+
+        query = {
+            "startDate": "{}-{}-{}T00:00:00".format(year, month, day),
+            "endDate": "{}-{}-{}T23:59:59".format(year, month, next_day)
+        }
+        headers = {"Authorization": "Bearer {}".format(self.token)}
+
+        response = requests.get(BASE_URL+"/v3/users/self/egvs", headers=headers, params=query)
+
+        if len(response.content) == 0:
+            raise Exception("Token Invalid, try /erase and restarting it") # Make Custom Exception
+        if asList:
+            tList = []
+            for i in reversed(response.json()["records"]):
+                # Reverse List (Bottom Timestamp is the Lowest)
+                tList.append([i["systemTime"], i["value"], i["trendRate"]])
+                self.unsorted_data.append([i["systemTime"], i["value"], i["trendRate"]]) # TODO The whole dataset (not sorted by month)
+            self.data.append(tList) # TODO If tList is the whole months day
+            print("TList is {} terms long".format(str(len(tList))))
+            return tList # Return the tList response as data
+        return response
     def requestData(self, year: str, month: str or None, asList: bool = False):
+
+        self.waitForToken()
+
+        if self.token is None:
+            raise Exception("Token in Undefined")
         _year, _month = (int(year), int(month)) # Ensure Integers
 
 
@@ -48,13 +111,15 @@ class DexcomOAuthServer(threading.Thread):
 
         response = requests.get(BASE_URL+"/v3/users/self/egvs", headers=headers, params=query)
 
+        if len(response.content) == 0:
+            raise Exception("Token Invalid, try /erase and restarting it") # Make Custom Exception
         if asList:
             tList = []
             for i in reversed(response.json()["records"]):
                 # Reverse List (Bottom Timestamp is the Lowest)
                 tList.append([i["systemTime"], i["value"], i["trendRate"]])
-                self.data.append([i["systemTime"], i["value"], i["trendRate"]])
-
+                self.unsorted_data.append([i["systemTime"], i["value"], i["trendRate"]]) # TODO The whole dataset (not sorted by month)
+            self.data.append(tList) # TODO If tList is the whole months day
             print("TList is {} terms long".format(str(len(tList))))
             return tList # Return the tList response as data
         return response
@@ -109,7 +174,7 @@ class DexcomOAuthServer(threading.Thread):
                 'state': session['oauth2_state'],
             })
             # url_for('oauth2_callback', provider=provider,
-            print(provider_data['authorize_url'] + '?' + qs, file=sys.stderr)
+            debug(provider_data['authorize_url'] + '?' + qs)
             # redirect the user to the OAuth2 provider authorization URL
             return redirect(provider_data['authorize_url'] + '?' + qs)
 
@@ -160,7 +225,7 @@ class DexcomOAuthServer(threading.Thread):
             # make sure that the state parameter matches the one we created in the
             # authorization request
             if request.args['state'] != session.get('oauth2_state'):
-                print("state doesn't match")
+                debug("Dexcom OAuth State doesn't match, moving on", type="ok")
                 # abort(401)
 
             # make sure that the authorization code is present
@@ -178,12 +243,12 @@ class DexcomOAuthServer(threading.Thread):
             }, headers={'Accept': 'application/json'})
 
             if response.status_code != 200:
-                print("here")
                 abort(401)
+
             oauth2_token = response.json().get('access_token')
             self.token  = response.json().get('access_token')
             if not oauth2_token:
-                print("OAUTH NO TOKEN")
+                debug("Fatal Error in Token: Something must have gone wrong")
                 abort(401)
 
             with open(self.path, "w") as w:
@@ -196,17 +261,24 @@ class DexcomOAuthServer(threading.Thread):
         threading.Thread.__init__(self, name="dexcom-oauth-server", daemon=True)
 
         if self_start:
-            print("Start the Server")
+            debug("Dexcon OAuth Sever Completed", type="info")
             self.start() # Starting the Server
 
+    def waitForToken(self,):
+        while self.token is None:
+            pass
+        debug("Dexcom OAuth-Token Found", type="info")
+        return self.token
+
     def run(self):
-        print("Application Starting!")
+        debug("Application Starting!", type="info")
 
         self.app.use_reloader=False
         self.app.run(debug=False, port=5000)
-        print("Server Finished")
+
 
     def join(self, timeout: float | None = None) -> None:
         # self.app.aborter(401)
+        debug("Dexcom OAuth Server Finished", type="info")
         return super().join(timeout)
 
