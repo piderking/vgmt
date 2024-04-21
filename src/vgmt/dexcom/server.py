@@ -148,6 +148,9 @@ class DexcomOAuthServer(threading.Thread):
             oauth2_token = response.json().get('access_token')
             self.token  = response.json().get('access_token')
             self.refresh_token  = response.json().get('refresh_token')
+
+            self.writeTokens() # Change JSON File
+
             if not oauth2_token:
                 debug("Fatal Error in Token: Something must have gone wrong")
                 abort(401)
@@ -175,7 +178,12 @@ class DexcomOAuthServer(threading.Thread):
                     "token": str(self.token),
                     "refresh_token": str(self.refresh_token)
                 }).replace("'", '"'))
+    def loadToken(self):
+        if os.path.exists(self.path):
+            _json = json.loads(open(self.path, "rt").read())
 
+            self.token = _json["token"]
+            self.refresh_token = _json["refresh_token"]
     def refreshToken(self): # TODO Confirm works
         if self.refreshToken is None:
             debug("Refresh Token is Missing! Can't refresh", type="critical")
@@ -245,13 +253,14 @@ class DexcomOAuthServer(threading.Thread):
 
         if len(response.content) == 0: # Invalid Token
             debug("Invalid Token, waiting on User to regenerate", type="warn")
+            if os.path.exists(self.path): os.remove(self.path) # Reset
             self.token = None
             self.waitForToken() # Waiting for webserver to activate the token
             #raise Exception("Token Invalid, try /erase and restarting it") # Make Custom Exception
 
         if asCsv:
             tList = []
-            for i in reversed(response.json()["records"]):
+            for i in reversed(response.json()["records"]): # TODO
                 # Reverse List (Bottom Timestamp is the Lowest)
                 tList.append([i["systemTime"], i["value"], i["trendRate"]])
 
@@ -320,10 +329,15 @@ class DexcomOAuthServer(threading.Thread):
 
 
     def waitForToken(self,):
-        if self.token is None: debug("Dexcom OAuth-Token Not Found", type="info")
+        if self.token is None: debug("Dexcom OAuth-Token Not Found", type="warn")
         while self.token is None:
             pass
         debug("Dexcom OAuth-Token Found", type="sucess")
+        if self.token is None: # If its None
+            self.loadToken()
+            self.writeTokens()
+
+        debug("Current Token is {}".format(str(self.token)), type="info")
         return self.token
 
     def run(self):

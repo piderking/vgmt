@@ -1,7 +1,16 @@
 import os
 from ..config import DATA_PATH
 from ..util.debug import debug
-def arrayToCsv(year: str, month: str, date: str, token: str, data: list):
+import csv
+
+
+def csvToArray(csvFilePath) -> list:
+    with open('eggs.csv', newline='') as csvfile:
+        spamreader = csv.reader(csvfile, delimiter=' ',) #  quotechar='|'
+        for row in spamreader:
+            print(', '.join(row))
+        return [[x[0], int(x[1]), float(x[2])] for x in spamreader]
+def arrayToCsv(year: str, month: str, date: str, token: str, data: list, t:str = "bs", ):
     """Convert a list of data into a CSV file
 
     Args:
@@ -9,11 +18,18 @@ def arrayToCsv(year: str, month: str, date: str, token: str, data: list):
         month (str): Month of Data
         date (str): Date of Data
         token (str): Token
+        t (str): type of data, "bs", "hr", "f", "ts"
     """
+    headers = {
+        "bs": "System Time,Value,Trend Rate",
+        "hr": "",
+        "f": "",
+        "t": ""
+    }
     if type(token) is not str or len(token) < 8: # TODO Find token length for here
         raise TypeError("Argument: Token, cannot be None type.")
 
-    directory = os.path.join(DATA_PATH, token[:8])
+    directory = os.path.join(DATA_PATH, t, token[:8])
     if not os.path.exists(os.path.join(directory)): # Create a oath
         os.makedirs(directory)
 
@@ -26,7 +42,7 @@ def arrayToCsv(year: str, month: str, date: str, token: str, data: list):
         f.write("System Time,Value,Trend Rate")
 
         for row in data:
-            f.write("\n{},{},{}".format(row[0], row[1],row[2])) # Append to File
+            f.write("\n" + "".join([str(col)+"," for col in row])) # Append to File
 
         debug("Finished Writing Datafile at {}".format(path), type="sucess")
         f.close()
