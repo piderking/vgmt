@@ -183,9 +183,7 @@ class Thread(threading.Thread):
                 # Add to total running
                 self.tasks += tasks
                 self.total_tasks += tasks
-                # Rounding
-                tenth = round(tasks / 10)
-                # debug('Formed pool of {} tasks'.format(tasks))
+
 
                 for idx, future in enumerate(concurrent.futures.as_completed(futures)):
                     i = futures[future] # Future

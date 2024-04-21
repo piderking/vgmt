@@ -8,6 +8,8 @@ class DexcomWorker(Thread):
         self.self_start = self_start
         self.unsorted_data = []
         self.server = DexcomOAuthServer(self_start=self_start) # Initalize the Server
+        self.total_blood_sugar = 0
+        self.total_entries = 0
         super().__init__(self_start=self_start)
 
     def start(self) -> None:
@@ -15,9 +17,10 @@ class DexcomWorker(Thread):
         if not self.self_start: self.server.start() # Start the Server
         return super().start()
 
-    def fcn(self,index: int, data:list):
-        #for d in data:
-        #    print(d)
+    def fcn(self, index: int, data:list):
+        for d in data:
+            self.total_blood_sugar += int(d[1])
+            self.total_entries += 1
         return [data]
 
     def run(self,) -> None:

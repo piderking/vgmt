@@ -10,6 +10,7 @@ import sys
 from uuid import uuid4
 import json
 from ..util.debug import debug
+from ..util.csv import arrayToCsv
 class DexcomOAuthServer(threading.Thread):
     app = Flask(__name__)
     data = []
@@ -197,7 +198,7 @@ class DexcomOAuthServer(threading.Thread):
         # The callback will be called and will write the refresh token
 
 
-    def requestDayData(self, year: str="2022", month: str="01", day:str="01", asList: bool = False):
+    def requestDayData(self, year: str="2022", month: str="01", day:str="01", asList: bool = False, asCsv:bool = False):
 
         self.waitForToken()
 
@@ -247,14 +248,23 @@ class DexcomOAuthServer(threading.Thread):
             self.token = None
             self.waitForToken() # Waiting for webserver to activate the token
             #raise Exception("Token Invalid, try /erase and restarting it") # Make Custom Exception
+
+        if asCsv:
+            tList = []
+            for i in reversed(response.json()["records"]):
+                # Reverse List (Bottom Timestamp is the Lowest)
+                tList.append([i["systemTime"], i["value"], i["trendRate"]])
+
+            arrayToCsv(year, month, day, self.token, tList)
+
         if asList:
+            # Get it returned as a list
             tList = []
             for i in reversed(response.json()["records"]):
                 # Reverse List (Bottom Timestamp is the Lowest)
                 tList.append([i["systemTime"], i["value"], i["trendRate"]])
                 self.unsorted_data.append([i["systemTime"], i["value"], i["trendRate"]]) # TODO The whole dataset (not sorted by month)
             self.data.append(tList) # TODO If tList is the whole months day
-            print("TList is {} terms long".format(str(len(tList))))
             return tList # Return the tList response as data
         return response
     def requestData(self, year: str, month: str or None, asList: bool = False):
@@ -310,7 +320,7 @@ class DexcomOAuthServer(threading.Thread):
 
 
     def waitForToken(self,):
-        debug("Dexcom OAuth-Token Not Found", type="info")
+        if self.token is None: debug("Dexcom OAuth-Token Not Found", type="info")
         while self.token is None:
             pass
         debug("Dexcom OAuth-Token Found", type="sucess")
