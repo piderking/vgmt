@@ -14,6 +14,7 @@ for i in range(3):
     #print(len(d.server.data))
     #print(len(d.results))
     pass
+d.server.requestData(year="2022", month="01", asList=True, asCsv=True)
 
 while len(d.data) > 0: # Wating til end of program
     pass

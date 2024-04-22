@@ -185,7 +185,7 @@ class DexcomOAuthServer(threading.Thread):
             self.token = _json["token"]
             self.refresh_token = _json["refresh_token"]
     def refreshToken(self): # TODO Confirm works
-        if self.refreshToken is None:
+        if self.refresh_token is None:
             debug("Refresh Token is Missing! Can't refresh", type="critical")
             raise Warning("Refresh Token Missing")
 
@@ -202,7 +202,8 @@ class DexcomOAuthServer(threading.Thread):
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
 
         response = requests.post(BASE_URL+"/v2/oauth2/token", data=payload, headers=headers)
-
+        print("Refresh Response" + str(response.content))
+        debug("Token request sent with authorization request", type="info")
         # The callback will be called and will write the refresh token
 
 
@@ -252,31 +253,35 @@ class DexcomOAuthServer(threading.Thread):
         response = requests.get(BASE_URL+"/v3/users/self/egvs", headers=headers, params=query)
 
         if len(response.content) == 0: # Invalid Token
-            debug("Invalid Token, waiting on User to regenerate", type="warn")
-            if os.path.exists(self.path): os.remove(self.path) # Reset
-            self.token = None
-            self.waitForToken() # Waiting for webserver to activate the token
-            #raise Exception("Token Invalid, try /erase and restarting it") # Make Custom Exception
+            if self.refresh_token is not None:
+                debug("Attemping to Regenerate tokens with refresh tokens", type="warn")
+                self.refreshToken()
+                # Rerun the web-reqjest
+                return self.requestDayData(year=year, month=month, day=day, asList = asList, asCsv = asCsv)
+            else:
+                debug("Invalid Refresh Token, waiting for user to regenerate credentials", type="warm")
+                #if os.path.exists(self.path): os.remove(self.path) # Reset
+                self.token = None
+                self.waitForToken() # Waiting for webserver to activate the token
+                #raise Exception("Token Invalid, try /erase and restarting it") # Make Custom Exception
 
-        if asCsv:
-            tList = []
-            for i in reversed(response.json()["records"]): # TODO
-                # Reverse List (Bottom Timestamp is the Lowest)
-                tList.append([i["systemTime"], i["value"], i["trendRate"]])
 
-            arrayToCsv(year, month, day, self.token, tList)
 
-        if asList:
+        if asList or asCsv:
             # Get it returned as a list
             tList = []
             for i in reversed(response.json()["records"]):
                 # Reverse List (Bottom Timestamp is the Lowest)
                 tList.append([i["systemTime"], i["value"], i["trendRate"]])
                 self.unsorted_data.append([i["systemTime"], i["value"], i["trendRate"]]) # TODO The whole dataset (not sorted by month)
+
             self.data.append(tList) # TODO If tList is the whole months day
+            if asCsv:
+                arrayToCsv(year, month, day, self.token, tList)
+
             return tList # Return the tList response as data
         return response
-    def requestData(self, year: str, month: str or None, asList: bool = False):
+    def requestData(self, year: str="2022", month: str = "01", asList: bool = False, asCsv: bool = False):
 
         self.waitForToken()
 
@@ -316,20 +321,40 @@ class DexcomOAuthServer(threading.Thread):
 
         if len(response.content) == 0 or response.content == b'':
             raise Exception("Token Invalid, try /erase and restarting it") # Make Custom Exception
-        if asList:
+
+        if len(response.content) == 0: # Invalid Token
+            if self.refresh_token is not None:
+                debug("Attemping to Regenerate tokens with refresh tokens", type="warn")
+                self.refreshToken()
+                # Rerun the web-reqjest
+                return self.requestData(year=year, month=month, asList = asList, asCsv = asCsv)
+            else:
+                debug("Invalid Refresh Token, waiting for user to regenerate credentials", type="warm")
+                #if os.path.exists(self.path): os.remove(self.path) # Reset
+                self.token = None
+                self.waitForToken() # Waiting for webserver to activate the token
+                #raise Exception("Token Invalid, try /erase and restarting it") # Make Custom Exception
+
+
+
+
+        if asList or asCsv:
             tList = []
             for i in reversed(response.json()["records"]):
                 # Reverse List (Bottom Timestamp is the Lowest)
                 tList.append([i["systemTime"], i["value"], i["trendRate"]])
                 self.unsorted_data.append([i["systemTime"], i["value"], i["trendRate"]]) # TODO The whole dataset (not sorted by month)
+
             self.data.append(tList) # TODO If tList is the whole months day
-            print("TList is {} terms long".format(str(len(tList))))
+            if asCsv:
+                arrayToCsv(year, month, "01-{}".format(max_day_value), self.token, tList)
+
             return tList # Return the tList response as data
         return response
 
 
     def waitForToken(self,):
-        if self.token is None: debug("Dexcom OAuth-Token Not Found", type="warn")
+        if self.token is None: debug("Dexcom OAuth-Token Not Found. Either include a ./token.json file or generate new credientals at http://localhost:5000/authorize/dexcom", type="warn")
         while self.token is None:
             pass
         debug("Dexcom OAuth-Token Found", type="sucess")
