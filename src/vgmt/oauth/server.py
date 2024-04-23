@@ -11,13 +11,13 @@ from uuid import uuid4
 import json
 from ..util.debug import debug
 from ..util.csv import arrayToCsv
-from ..dexcom.worker import DexcomWorker
+from ..dexcom.worker import DexcomWorker, InvalidToken
 class OAUTH_Server(threading.Thread):
 
     app = Flask(__name__)
     data = []
     unsorted_data = []
-    workers = {
+    workers: dict[DexcomWorker] = {
         "dexcom": DexcomWorker()
     } # List of All Types of Workers "provider": Object()
 
@@ -126,12 +126,10 @@ class OAUTH_Server(threading.Thread):
 
             return response.content # Will be JSON
 
-        @self.app.route("/erase")
-        def erase_token(): # Erase the current token in memory and in DRIVE
-            if os.path.exists(self.path):
-                os.remove(self.path)
-            self.token = None
-            return redirect(url_for("oauth2_authorize", provider="dexcom"))
+        @self.app.route("/erase/<provider>")
+        def erase_token(provider): # Erase the current token in memory and in DRIVE
+            self.removeToken(provider)
+            return redirect(url_for("oauth2_authorize", provider=provider))
 
         @self.app.route('/callback/<provider>') # Call back function (only works for DEXCOM)
         def oauth2_callback(provider: str): # OAuth-Provider Function (Don't Touch)
@@ -246,6 +244,12 @@ class OAUTH_Server(threading.Thread):
         self.db.insert({"provider": provider, "token":token, "refresh_token":refresh_token})
 
         return token
+
+    def requestData(self, provider: str, _type: str, year: str, month: str, day:str or None=None, asCsv:bool = False):
+        try:
+            self.workers[provider].getData(_type,year,month,day=day,asCsv=asCsv)
+        except InvalidToken as e:
+            debug(e, type="error")
     def removeToken(self, provider: str) -> None:
         Tokens = Query()
 
