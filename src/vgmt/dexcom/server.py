@@ -1,7 +1,7 @@
 import threading
 from typing import Any
 from urllib.parse import urlencode
-from ..config import BASE_URL, CLIENT
+from ..config import DEXCOM_BASE_URL, CLIENT
 from flask import Flask, redirect, url_for, render_template, flash, session, \
     current_app, request, abort
 import os
@@ -19,7 +19,7 @@ class DexcomOAuthServer(threading.Thread):
     def __init__(self, secret_key: str or None = None, self_start:bool = True) -> None:
         self.token = None
         self.refresh_token = None
-        self.path = os.path.join(os.path.abspath("."), "token.json")
+        self.path = os.path.join(os.path.abspath("."), "dexcom-token.json")
 
 
         if os.path.exists(self.path):
@@ -36,8 +36,8 @@ class DexcomOAuthServer(threading.Thread):
             'dexcom': {
                 'client_id':"ekNKJ3VF0ZIdkZEvLhMmPiAk8UMwLqjJ",
                 'client_secret': "SSccVsr7O4wMpyPh",
-                'authorize_url': BASE_URL+'/v2/oauth2/login',
-                'token_url': BASE_URL+'/v2/oauth2/token',
+                'authorize_url': DEXCOM_BASE_URL+'/v2/oauth2/login',
+                'token_url': DEXCOM_BASE_URL+'/v2/oauth2/token',
                 'scopes': ['offline_access'],
             },
         }
@@ -201,7 +201,7 @@ class DexcomOAuthServer(threading.Thread):
 
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
 
-        response = requests.post(BASE_URL+"/v2/oauth2/token", data=payload, headers=headers)
+        response = requests.post(DEXCOM_BASE_URL+"/v2/oauth2/token", data=payload, headers=headers)
         print("Refresh Response" + str(response.content))
         debug("Token request sent with authorization request", type="info")
         # The callback will be called and will write the refresh token
@@ -250,7 +250,7 @@ class DexcomOAuthServer(threading.Thread):
         }
         headers = {"Authorization": "Bearer {}".format(self.token)}
 
-        response = requests.get(BASE_URL+"/v3/users/self/egvs", headers=headers, params=query)
+        response = requests.get(DEXCOM_BASE_URL+"/v3/users/self/egvs", headers=headers, params=query)
 
         if len(response.content) == 0: # Invalid Token
             if self.refresh_token is not None:
@@ -317,7 +317,7 @@ class DexcomOAuthServer(threading.Thread):
 
         headers = {"Authorization": "Bearer {}".format(self.token)}
 
-        response = requests.get(BASE_URL+"/v3/users/self/egvs", headers=headers, params=query)
+        response = requests.get(DEXCOM_BASE_URL+"/v3/users/self/egvs", headers=headers, params=query)
 
         if len(response.content) == 0 or response.content == b'':
             raise Exception("Token Invalid, try /erase and restarting it") # Make Custom Exception
@@ -354,7 +354,7 @@ class DexcomOAuthServer(threading.Thread):
 
 
     def waitForToken(self,):
-        if self.token is None: debug("Dexcom OAuth-Token Not Found. Either include a ./token.json file or generate new credientals at http://localhost:5000/authorize/dexcom", type="warn")
+        if self.token is None: debug("Dexcom OAuth-Token Not Found. Either include a ./dexcom-token.json file or generate new credientals at http://localhost:5000/authorize/dexcom", type="warn")
         while self.token is None:
             pass
         debug("Dexcom OAuth-Token Found", type="sucess")

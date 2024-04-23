@@ -17,24 +17,6 @@ class Thread(threading.Thread):
     """# Parallelism Threading
         Utility for running opperations on or observing data in seperate paralleled threads, uses decorators with concurrent.futures
 
-        ## Usage
-        ```python
-        from vgmt.util import Thread
-
-        # Create the function, other opperations like data exporting could be done here
-        # for mathmatical applications lambdas will work
-        execute_task = lambda a : a * 10
-
-        # Create an instance of the Thread object
-        # For more advanced uses using subclassing and abstraction
-        t = Thread(self_start=True)
-
-        @t.threaded # Decorator from created instance
-        def runner_fcn(index: int,) -> list: # index can also be _ if position isn't required
-            results = []
-            for v in range(10):
-                results.append(execute_task(v * index)) # Lambda used to represent functionality, not required could be (v * index * 10)
-            return results
 
         ```
 

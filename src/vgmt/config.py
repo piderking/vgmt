@@ -15,7 +15,7 @@ DEBUG = True
 CLIENT = {"dexcom-id": os.environ.get("DEXCOM-CLIENT-ID", "ekNKJ3VF0ZIdkZEvLhMmPiAk8UMwLqjJ"), "dexcom-secret": os.environ.get("DEXCOM-OAUTH-SECRET", "SSccVsr7O4wMpyPh")}
 
 SANDBOX=True
-BASE_URL = "https://sandbox-api.dexcom.com" if SANDBOX else "https://api.dexcom.com"
+DEXCOM_BASE_URL = "https://sandbox-api.dexcom.com" if SANDBOX else "https://api.dexcom.com"
 
 # Data PAth
 DATA_PATH = os.path.abspath("./data/")
