@@ -1,4 +1,4 @@
-from ..util import Thread
+from ..util.thread import Thread
 from ..util.debug import debug
 from .server import DexcomOAuthServer
 import math
@@ -44,21 +44,32 @@ class DexcomWebWorker(Thread):
         Warning: General Warning or Error
 
     """
+
+
     # NOTE self.data is in the webworker thread, self.data is the requests
     def __init__(self) -> None:
         self.total_blood_sugar = 0
         self.total_entries = 0
         self._token = None
+        self._work = True
 
         super().__init__(self_start=False)
 
+    def start(self) -> None:
+        self._work = True
+        return super().start()
     @property
     def token(self):
         if self._token is None:
             raise InvalidToken("Token passed through to DexcomWebWorker is None!")
         return self._token # TODO Make sure up to dates
 
-    def getData(self, _type: str, year: str, month: str, day:str or None=None, asCsv: bool = True)->list:
+    def validToken(self):
+        if self._token is None:
+            return False # Not valid
+        else:
+            return True
+    def getData(self, _type: str="month", url:str="need_url", year: str="2023", month: str="01", day:str or None=None, asCsv: bool = True)->list:
         """Wrapper Function
 
         Args:
@@ -68,14 +79,24 @@ class DexcomWebWorker(Thread):
             day (str, optional): _description_. Defaults to "01".
             asCsv (bool, optional): _description_. Defaults to True.
         """
-        uuid = uuid4()
-        self.data.append({"type":_type, "id":uuid, "year": year, "month":month, "day":None, "asCsv": asCsv})
-        yield uuid
+
+        uuid = str(uuid4())
+        self.data.append({"type":_type, "url":url, "id":uuid, "year": year, "month":month, "day":None, "asCsv": asCsv}) # Sucessful Appending to data
+        return uuid
+
+    def getResult(self, uuid: str) -> list:
         while True:
-            for count, result in enumerate(self.unsorted_results):
-                if result["id"] == uuid:
-                    self.data.pop(count) # NOTE Hopefully this doesn't cause problems when multiple getData threads are running
-                    yield result["data"]
+            if len(self.unsorted_results) > 0:
+                for count, result in enumerate(self.unsorted_results):
+                    #debug(str(result))
+                    if result["id"] == uuid:
+                        if self.unsorted_results[count]["id"] == uuid:
+                            self.unsorted_results.pop(count) # NOTE Hopefully this doesn't cause problems when multiple getData threads are running
+                            debug("Found Result", type="ok")
+                        return result["data"]
+            # print(self.unsorted_results) -- Takes a second for web requests
+
+
 
     def fcn(self, index: int, data: dict):
         """Runner Funtion for this Thread
@@ -94,14 +115,16 @@ class DexcomWebWorker(Thread):
         Returns:
             list: Will be appended to self.results
         """
+        debug("Making Web Request with: " + str(data), type="info")
+        # clearprint(data)
         if data["type"] == "month":
             # Fetch Month Data (in-thread configuration)
-            return [{"id": data["id"], "data": self.requestData(data["url"], data["year"],data["month"], asList=True)}]
+            return [{"id": data["id"], "data": self.requestData(data["url"], data["year"],data["month"], asList=True, asCsv=data["asCsv"])}]
         elif data["type"] == "day":
             # Fetch Day Data (in-thread configuration)
             if data["day"] is None:
                 raise InvalidRequestType("No date specified for request type of Day Data")
-            return [{"id": data["id"], "data":self.requestDayData(data["url"], data["year"],data["month"], data["day"], asList=True)}]
+            return [{"id": data["id"], "data":self.requestDayData(data["url"], data["year"],data["month"], data["day"], asList=True, asCsv=data["asCsv"])}]
 
 
         raise InvalidRequestType("Type of Data to fetch isn't specified")
@@ -151,17 +174,15 @@ class DexcomWebWorker(Thread):
 
 
 
-        if asList or asCsv:
-            # Get it returned as a list
-            tList = []
-            for i in reversed(response.json()["records"]):
-                # Reverse List (Bottom Timestamp is the Lowest)
-                tList.append([i["systemTime"], i["value"], i["trendRate"]])
-            if asCsv:
-                arrayToCsv(year, month, day, self.token, tList)
 
-            return tList # Return the tList response as data
-        return response
+        # Get it returned as a list
+        tList = []
+        for i in reversed(response.json()["records"]):
+            # Reverse List (Bottom Timestamp is the Lowest)
+            tList.append([i["systemTime"], i["value"], i["trendRate"]])
+        if asCsv:
+            arrayToCsv(year, month, day, self.token, tList)
+        return tList # Return the tList response as data
 
     def requestData(self, url:str, year: str, month: str, asList: bool = False, asCsv: bool = False):
 
@@ -206,17 +227,14 @@ class DexcomWebWorker(Thread):
 
 
 
-        if asList or asCsv:
-            tList = []
-            for i in reversed(response.json()["records"]):
-                # Reverse List (Bottom Timestamp is the Lowest)
-                tList.append([i["systemTime"], i["value"], i["trendRate"]])
 
-            if asCsv:
-                arrayToCsv(year, month, "01-{}".format(max_day_value), self.token, tList)
-
-            return tList # Return the tList response as data
-        return response
+        tList = []
+        for i in reversed(response.json()["records"]):
+            # Reverse List (Bottom Timestamp is the Lowest)
+            tList.append([i["systemTime"], i["value"], i["trendRate"]])
+        if asCsv:
+            arrayToCsv(year, month, "01-{}".format(max_day_value), self.token, tList)
+        return tList # Return the tList response as data
 
 class DexcomWorker(Thread):
 
@@ -231,6 +249,7 @@ class DexcomWorker(Thread):
     def start(self) -> None:
         debug("Starting Dexcom Worker Thread", type="info")
         self.web_worker.start()
+        self._work = True
         return super().start()
 
     def fcn(self, index: int, data:list):
@@ -243,8 +262,9 @@ class DexcomWorker(Thread):
         Returns:
             _type_: _description_
         """
+        # print(self.web_worker.unsorted_results)
         for d in data:
-            self.total_blood_sugar += int(d[1])
+            #print(data)
             self.total_entries += 1
         return [data]
 

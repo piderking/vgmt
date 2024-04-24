@@ -42,7 +42,7 @@ class OAUTH_Server(threading.Thread):
         self.app.config['SECRET_KEY'] = self.secret_key
 
         # Configurations for Providers
-        self.app.config['OAUTH2_PROVIDERS'] = {
+        self.oauth_providers = {
             # Google OAuth 2.0 documentation:
             # https://developers.google.com/identity/protocols/oauth2/web-server#httprest
             "dexcom": {
@@ -75,7 +75,7 @@ class OAUTH_Server(threading.Thread):
                 # return redirect(url_for('get_data'))
                 pass
 
-            provider_data = current_app.config['OAUTH2_PROVIDERS'].get(provider)
+            provider_data = self. get(provider)
             if provider_data is None:
                 abort(404)
 
@@ -112,19 +112,19 @@ class OAUTH_Server(threading.Thread):
             # Provider Data
             #provider_data = current_app.config['OAUTH2_PROVIDERS'].get(provider)
 
-            if self.checkToken(provider):
-                return str({"error": "Provider is not valid"})
-            if self.getToken(provider):
-                return redirect(url_for("oauth2_authorize", provider="dexcom"))
+            if not self.checkToken(provider):
+                return str({"message": "Token is not valid", "action":str("http://localhost:5000/" +  url_for("oauth2_authorize", provider=provider))})
+            elif not provider in self.workers.keys():
+                return str({"message": "Provider is not valid", "action":""})
 
             month = request.args.get("month")
 
             if month is None :
                 return str({"arg": "URL Paramter not defined"})
 
-            response = self.requestData(year, month)
+            response = self.requestData(provider, "month", year, month)
 
-            return response.content # Will be JSON
+            return response # Will be JSON
 
         @self.app.route("/erase/<provider>")
         def erase_token(provider): # Erase the current token in memory and in DRIVE
@@ -133,7 +133,7 @@ class OAUTH_Server(threading.Thread):
 
         @self.app.route('/callback/<provider>') # Call back function (only works for DEXCOM)
         def oauth2_callback(provider: str): # OAuth-Provider Function (Don't Touch)
-            provider_data = current_app.config['OAUTH2_PROVIDERS'].get(provider)
+            provider_data = self.oauth_providers.get(provider)
             if provider_data is None:
                 abort(404)
 
@@ -196,6 +196,14 @@ class OAUTH_Server(threading.Thread):
 
         debug("OAuth Sever Starting", type="info")
         super().start()
+    def supplyToken(self, provider:str or None = None):
+        if provider is not None:
+            self.workers[provider].web_worker._token =self.getToken(provider)
+        else:
+            for provider in self.workers.keys():
+                # Update all providers
+                self.workers[provider].web_worker._token =self.getToken(provider)
+
     def checkToken(self, provider: str,)-> bool:
         """Check if token exsists
 
@@ -209,6 +217,7 @@ class OAUTH_Server(threading.Thread):
         if len(self.db.search(Tokens.provider == provider)) == 0:
             return False # Provider's Token Doesn't Exsist
         else:
+            # debug(str(self.db.search(Tokens.provider == provider)), type="Error")
             return True # Some Entry Exsists for the Provider
     def getToken(self, provider: str, isRefresh: bool = False):
         """Get the token of the povider
@@ -245,9 +254,11 @@ class OAUTH_Server(threading.Thread):
 
         return token
 
-    def requestData(self, provider: str, _type: str, year: str, month: str, day:str or None=None, asCsv:bool = False):
+    def requestData(self, provider: str, _type: str, year: str, month: str, day:str or None=None, asCsv:bool = False) -> str:
         try:
-            self.workers[provider].getData(_type,year,month,day=day,asCsv=asCsv)
+            self.supplyToken(provider) # Add Token
+            uuid = self.workers[provider].web_worker.getData(_type=_type,url=self.oauth_providers.get(provider)["data_url"],year=year,month=month,day=day,asCsv=asCsv)
+            return self.workers[provider].web_worker.getResult(uuid)
         except InvalidToken as e:
             debug(e, type="error")
     def removeToken(self, provider: str) -> None:

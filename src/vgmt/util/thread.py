@@ -38,15 +38,15 @@ class Thread(threading.Thread):
         self.data = [] if data is None or type(data) is not list else data # Type check the data variable and make sure, list, can be empty
         self.results = []
         self.unsorted_results = []
-        self._work = False
         self.basis = basis
         self.times = times
         self.sameTarget = 0
         threading.Thread.__init__(self, name=uuid4, daemon=daemon)
 
+        self._work = True
+
         # Self_Start
         if self_start:
-            self._work = True
             self.start()
 
 
@@ -179,11 +179,11 @@ class Thread(threading.Thread):
                         results[i] = data
 
                         self.tasks -= 1
-                    except Exception as exc:
-                        self.tasks -= 1
-                        debug('{} generated an exception: {}'.format(
-                            target[i], exc))
-
+                    #except Exception as exc:
+                    #    self.tasks -= 1
+                    #    debug('{} generated an exception: {}'.format(
+                    #       target[i], exc))
+                    finally: pass
 
             # sort and put in array
             final = []

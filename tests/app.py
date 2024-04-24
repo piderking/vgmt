@@ -17,9 +17,19 @@ for i in range(3):
 # d.server.requestData(year="2022", month="01", asList=True, asCsv=True)
 
 
-while len(d.data) > 0: # Wating til end of program
+# print(d.workers["dexcom"].web_worker.results)
+uuid = d.requestData("dexcom", "month", "2023", "01", asCsv=True)
+#uuid = d.requestData("dexcom", "month", "2023", "04")
+#uuid = d.requestData("dexcom", "month", "2023", "05")
+
+
+while len(d.workers["dexcom"].web_worker.data) > 0:
+    # print(len(d.workers["dexcom"].web_worker.unsorted_results))
     pass
-d.join()
+
+
+d.workers["dexcom"].web_worker.join()
+d.workers["dexcom"].join()
 # arrayToCsv("2022", "03", "01",d.server.token,d.unsorted_results[0])
-print("Unsorted Length Results " + str(len(d.unsorted_results)))
-print("Average Blood Sugar " + str(int(d.total_blood_sugar/d.total_entries*10)/10))
+#print(d.workers["dexcom"].web_worker.unsorted_results)
+#print("Average Blood Sugar " + str(int(d.workers["dexcom"].total_blood_sugar/d.workers["dexcom"].total_entries*10)/10))

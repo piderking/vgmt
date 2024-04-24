@@ -4,3 +4,4 @@ Flask
 requests
 urllib3
 tinydb
+colorama
