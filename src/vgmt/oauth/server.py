@@ -72,10 +72,10 @@ class OAUTH_Server(threading.Thread):
         @self.app.route('/authorize/<provider>')
         def oauth2_authorize(provider): # Authorization (Simple Redirect)
             if self.checkToken(provider):
-                # return redirect(url_for('get_data'))
-                pass
+                return redirect(url_for('index'))
 
-            provider_data = self. get(provider)
+
+            provider_data = self.oauth_providers.get(provider)
             if provider_data is None:
                 abort(404)
 
@@ -215,11 +215,14 @@ class OAUTH_Server(threading.Thread):
         """
         Tokens = Query() # Query TinyDB
         if len(self.db.search(Tokens.provider == provider)) == 0:
+            print("Invalid Token")
+
             return False # Provider's Token Doesn't Exsist
         else:
             # debug(str(self.db.search(Tokens.provider == provider)), type="Error")
+            print("Valid Token")
             return True # Some Entry Exsists for the Provider
-    def getToken(self, provider: str, isRefresh: bool = False):
+    def getToken(self, provider: str, isRefresh: bool = False) -> str or None:
         """Get the token of the povider
 
         Args:
@@ -227,9 +230,30 @@ class OAUTH_Server(threading.Thread):
 
         Returns:
             String: Returns the first token for the provider
+            None: If does't exsist
         """
         Tokens = Query() # Query TinyDB
-        return self.db.search(Tokens.provider == provider)[0]["token"] if not isRefresh else self.db.search(Tokens.provider == provider)[0]["refresh_toke"] # Should be token object
+        search = self.db.search(Tokens.provider == provider)
+        if len(search) < 1:
+            return None
+        return search[0]["token"] if not isRefresh else search[0]["refresh_token"] # Should be token object
+
+
+    def on(self, fcn):
+        """Decorator to wait on the token value in order to coninute
+        ```python
+        @sever.on
+        def func(provider):
+            print(provider)
+        ```
+        """
+        def wrapper(*args, **kwargs):
+            while self.getToken(args[0]) is None:
+                pass
+
+            return self.getToken(args[0])
+        return wrapper
+
     def writeToken(self, provider: str, token: str, refresh_token: str) -> str:
         """Write the tokens or update the exsisting entry
 
