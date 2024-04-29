@@ -4,13 +4,26 @@ from ..util.debug import debug
 import csv
 
 
-def csvToArray(csvFilePath) -> list:
-    with open('eggs.csv', newline='') as csvfile:
+def csvToArray(csvFilePath: str) -> list:
+    """Transform a CSV File Path into an array (list)
+
+    Args:
+        csvFilePath (str): Path at which destinted CSV File can be found
+
+    Raises:
+        FileNotFoundError: No file at path specified was found
+
+    Returns:
+        list: array generated from inside of the CSV file
+    """
+    if not os.path.exists(csvfile):
+        raise FileNotFoundError(str(csvFilePath) + " is not defined")
+    with open(csvFilePath, newline='') as csvfile:
         spamreader = csv.reader(csvfile, delimiter=' ',) #  quotechar='|'
         for row in spamreader:
             print(', '.join(row))
         return [[x[0], int(x[1]), float(x[2])] for x in spamreader]
-def arrayToCsv(year: str, month: str, date: str, token: str, data: list, t:str = "bs", ):
+def arrayToCsv(year: str, month: str, date: str, token: str, data: list, t:str = "bs", ) -> str:
     """Convert a list of data into a CSV file
 
     Args:
@@ -19,6 +32,8 @@ def arrayToCsv(year: str, month: str, date: str, token: str, data: list, t:str =
         date (str): Date of Data
         token (str): Token
         t (str): type of data, "bs", "hr", "f", "ts"
+    Returns:
+        str: Filepath
     """
     headers = {
         "bs": "System Time,Value,Trend Rate",
@@ -46,3 +61,5 @@ def arrayToCsv(year: str, month: str, date: str, token: str, data: list, t:str =
 
         debug("Finished Writing Datafile at {}".format(path), type="sucess")
         f.close()
+
+    return path

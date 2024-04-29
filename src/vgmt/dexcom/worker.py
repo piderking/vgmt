@@ -64,7 +64,12 @@ class DexcomWebWorker(Thread):
             raise InvalidToken("Token passed through to DexcomWebWorker is None!")
         return self._token # TODO Make sure up to dates
 
-    def validToken(self):
+    def validToken(self) -> bool:
+        """Status of wether the token for the web worker is None or not
+
+        Returns:
+            Bool: If the token has been passed to the web worker, or not
+        """
         if self._token is None:
             return False # Not valid
         else:
@@ -219,7 +224,7 @@ class DexcomWebWorker(Thread):
         response = requests.get(url, headers=headers, params=query)
 
         if len(response.content) == 0 or response.content == b'':
-            raise Exception("Token Invalid, try /erase and restarting it") # Make Custom Exception
+            raise InvalidToken("Token Invalid, try /erase and restarting it") # Make Custom Exception
 
         if len(response.content) == 0: # Invalid Token
             raise InvalidToken()

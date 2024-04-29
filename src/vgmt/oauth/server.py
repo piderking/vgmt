@@ -101,6 +101,11 @@ class OAUTH_Server(threading.Thread):
             # Standard Loading Page: Request Data Through WebAPI
             return str({"error":"Page Not Found", "message": "Data Fetching Format is data/{year}?month=01"})
 
+        @self.app.route("/refresh/<provider>")
+        def refresh(provider):
+            # Standard Loading Page: Request Data Through WebAPI
+            self.refreshToken(provider)
+            return redirect(url_for("index"))
         @self.app.route("/data/<provider>/<year>")
         def get_months_data(provider:str, year: str):
             """Get the data for the month
@@ -283,7 +288,7 @@ class OAUTH_Server(threading.Thread):
             self.supplyToken(provider) # Add Token
             uuid = self.workers[provider].web_worker.getData(_type=_type,url=self.oauth_providers.get(provider)["data_url"],year=year,month=month,day=day,asCsv=asCsv)
             return self.workers[provider].web_worker.getResult(uuid)
-        except InvalidToken as e:
+        except Exception as e:
             debug(e, type="error")
     def removeToken(self, provider: str) -> None:
         Tokens = Query()
@@ -304,7 +309,7 @@ class OAUTH_Server(threading.Thread):
         Returns:
             Nothing: The token will be written through
         """
-        provider_data: dict = current_app.config['OAUTH2_PROVIDERS'].get(provider)
+        provider_data: dict = self.oauth_providers.get(provider)
 
         if not self.checkToken(provider): # If the token is missing
             debug("Refresh Token Provider is Missing!", type="critical")
