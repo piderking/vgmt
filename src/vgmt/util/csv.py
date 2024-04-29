@@ -36,14 +36,15 @@ def arrayToCsv(year: str, month: str, date: str, token: str, data: list, t:str =
         str: Filepath
     """
     headers = {
-        "bs": "System Time,Value,Trend Rate",
-        "hr": "",
-        "f": "",
-        "t": ""
+        "bs": "System Time,Time Stamp, Value,Trend Rate", # Blood Sugar
+        "hr": "", # Heart Rate
+        "f": "", # Final (Blood Sugar and Heart Rate)
+        "t": "" # Testing Data
     }
     if type(token) is not str or len(token) < 8: # TODO Find token length for here
         raise TypeError("Argument: Token, cannot be None type.")
-
+    if not t in headers.keys():
+        raise KeyError("Target Header passed doesn't exsist")
     directory = os.path.join(DATA_PATH, t, token[:8])
     if not os.path.exists(os.path.join(directory)): # Create a oath
         os.makedirs(directory)
@@ -54,11 +55,22 @@ def arrayToCsv(year: str, month: str, date: str, token: str, data: list, t:str =
         os.remove(path)
 
     with open(path, "a") as f:
-        f.write("System Time,Value,Trend Rate")
+        f.write(headers[t])
 
-        for row in data:
-            f.write("\n" + "".join([str(col)+"," for col in row])) # Append to File
+        amt = headers[t].split(",")
+        for rc, row in enumerate(data):
+            line = "\n"
+            # f.write()) Time Values, requries Time Stamps
+            for count, col in enumerate(row):
+                if amt[count] == "Time Stamp":
+                    # debug("Here!", type="error")
+                    line += str(rc)
+                    line+=","
 
+                line += str(col)
+                line+=","
+
+            f.write(line)
         debug("Finished Writing Datafile at {}".format(path), type="sucess")
         f.close()
 
