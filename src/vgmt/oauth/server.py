@@ -188,7 +188,7 @@ class OAUTH_Server(threading.Thread):
             else: # TODO Add Basic Logic for additional providers
                 return redirect(url_for("index"))
 
-
+        self.supplyToken(provider=None)
         # Initalize Thread Object
         threading.Thread.__init__(self, name="oauth-server", daemon=True)
 
@@ -239,25 +239,23 @@ class OAUTH_Server(threading.Thread):
         """
         Tokens = Query() # Query TinyDB
         search = self.db.search(Tokens.provider == provider)
+
         if len(search) < 1:
+            debug("Token not found", type="warn")
             return None
         return search[0]["token"] if not isRefresh else search[0]["refresh_token"] # Should be token object
 
 
-    def on(self, fcn):
+    def on(self, *args, **kwargs):
         """Decorator to wait on the token value in order to coninute
         ```python
-        @sever.on
-        def func(provider):
-            print(provider)
-        ```
         """
-        def wrapper(*args, **kwargs):
-            while self.getToken(args[0]) is None:
-                pass
 
-            return self.getToken(args[0])
-        return wrapper
+        while self.getToken(args[1]) is None:
+            pass
+        result = args[0](*list(args[1:]), **kwargs)
+
+        return result
 
     def writeToken(self, provider: str, token: str, refresh_token: str) -> str:
         """Write the tokens or update the exsisting entry

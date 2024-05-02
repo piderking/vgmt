@@ -18,8 +18,11 @@ for i in range(3):
 
 
 # print(d.workers["dexcom"].web_worker.results)
-uuid = d.requestData("dexcom", "month", "2023", "01", asCsv=True)
-#uuid = d.requestData("dexcom", "month", "2023", "04")
+#uuid = d.requestData("dexcom", "month", "2023", "01", asCsv=True)
+
+d.on(d.requestData, "dexcom", "month", "2023", "01", asCsv=True)
+
+#   uuid = d.requestData("dexcom", "month", "2023", "04")
 #uuid = d.requestData("dexcom", "month", "2023", "05")
 
 
