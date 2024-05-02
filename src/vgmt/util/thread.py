@@ -22,6 +22,7 @@ class Thread(threading.Thread):
 
 
     """
+    debug=False
     def __init__(self, target: int = 3 , self_start:bool = True, daemon: bool = True, data: list = [], basis: float = 0.75, times: int = 3) -> None:
         """Initalize Parallization Util
 
@@ -53,7 +54,7 @@ class Thread(threading.Thread):
     def setFcn(self, fcn):
         self.fcn = fcn # Function
 
-    def fcn(self, i, d):
+    def fcn(self, i, d,):
 
         return [d, i]
 
@@ -78,6 +79,7 @@ class Thread(threading.Thread):
         #### Returns:
             Literal (boolean): If data has terms in it
         """
+
         return True if len(self.data) > 0 else False
 
 

@@ -8,7 +8,7 @@ import os
 STATUS = True
 
 # How MAX THREADS WORKS, divided
-MAX_THREADS = 10
+MAX_THREADS = 16
 DEBUG = True
 
 # Dexcom

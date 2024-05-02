@@ -1,3 +1,4 @@
-from vgmt.dexcom.server import DexcomOAuthServer
+from vgmt.util.csv import combineCsvFiles
 
-d = DexcomOAuthServer()
+
+combineCsvFiles(['./data/bs/eyJ0eXAi/01-01-31-2023.csv','./data/bs/eyJ0eXAi/01-01-31-2023.csv', ])
