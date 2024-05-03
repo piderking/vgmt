@@ -28,7 +28,7 @@ def csvToArray(csvFilePath: str) -> list:
         return [[x[0], int(x[1]), float(x[2])] for x in spamreader]
 
 class CSV_Processor(Thread):
-    def __init__(self, skips:list, file:str, target: int = 3, self_start: bool = True, daemon: bool = True, data: list = ..., basis: float = 0.75, times: int = 3) -> None:
+    def __init__(self, skips:list, file:str, target: int = 3, self_start: bool = True, daemon: bool = True, data: list = ..., basis: float = 0.2, times: int = 3) -> None:
         self.skips = skips
         self.file = open(file, "a")
 
@@ -46,7 +46,7 @@ class CSV_Processor(Thread):
 
         return f
     def needsOpperation(self) -> bool:
-        print("Processor at " + str(self.target))
+        debug("Processor at " + str(self.target))
         # print("Length of Data: " + str(len(self.data)) )
         #print("Length of Results: " + str(len(self.unsorted_results)) )
         return super().needsOpperation()
@@ -98,7 +98,7 @@ class CSV_Processor(Thread):
             return final
         return wrapper
 class CSV_Writer(Thread):
-    def __init__(self, file:str, target: int = 5, self_start: bool = True, daemon: bool = True, data: list = ..., basis: float = 0.75, times: int = 3) -> None:
+    def __init__(self, file:str, target: int = 5, self_start: bool = True, daemon: bool = True, data: list = ..., basis: float = 0.2, times: int = 3) -> None:
         self.file = open(file, "a")
         super().__init__(target=target, self_start=True, daemon=daemon, data=data, basis=basis, times=times)
 
@@ -106,8 +106,7 @@ class CSV_Writer(Thread):
         print("Writer at " + str(self.target))
         return super().needsOpperation()
     def fcn(self, index: int = 0, d: list = [],) -> list:
-        #print(d)
-        self.file.write("\n" + ",".join(d)[:-1])
+        self.file.write("\n" + ",".join(d))
         return d
 
     def threaded(self: Thread, fcn):
@@ -166,7 +165,7 @@ def combineCsvFiles(csvFilePaths: list[str]) -> str:
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-    new_path = os.path.join(directory, str(uuid4()))
+    new_path = os.path.join(directory, str(uuid4())+".csv")
     for path in csvFilePaths:
         if not os.path.exists(path):
             #debug("Data File at {} already exsists, overwriting".format(path),type="warn")
@@ -200,11 +199,10 @@ def combineCsvFiles(csvFilePaths: list[str]) -> str:
     debug("Headers are {}, skips are {}".format(str(headers), str(skip)))
     # Flatten all the files (Single List)
 
-    files = [file[1:] for file in files] # Remove headers
+    #files = [file[1:] for file in files] # Remove headers
 
 
     with open(new_path, "a") as f:
-        #f.write(",".join(headers)) # Write Headers (and remove last one)
         lines = [[] for x in range(len(files[0]) - 1)]  # Use header as headers for item length
         f_lines = lines # Make a copy
 
@@ -258,7 +256,7 @@ def arrayToCsv(year: str, month: str, date: str, token: str, data: list, t:str =
         str: Filepath
     """
     headers = {
-        "bs": "System Time,Time Stamp, Value,Trend Rate", # Blood Sugar
+        "bs": "System Time,Time Stamp,Value,Trend Rate", # Blood Sugar
         "hr": "", # Heart Rate
         "f": "", # Final (Blood Sugar and Heart Rate)
         "t": "" # Testing Data
