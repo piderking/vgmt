@@ -10,7 +10,7 @@ STATUS = True
 # How MAX THREADS WORKS, divided
 MAX_THREADS = 16
 DEBUG = True
-
+MAX_DEBUGS=2
 # Dexcom
 CLIENT = {"dexcom-id": os.environ.get("DEXCOM-CLIENT-ID", "ekNKJ3VF0ZIdkZEvLhMmPiAk8UMwLqjJ"), "dexcom-secret": os.environ.get("DEXCOM-OAUTH-SECRET", "SSccVsr7O4wMpyPh")}
 
