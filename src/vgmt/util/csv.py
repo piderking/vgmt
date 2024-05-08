@@ -38,11 +38,15 @@ def step_range(lent:float, interval: float):
         count += interval
     yield count, lent - 1
 class CSV_Processor(Thread):
-    def __init__(self, skips:list,file:str,  batch: int = 10,  target: int = 3, self_start: bool = True, daemon: bool = True, data: list = ..., basis: float = 0.2, times: int = 3) -> None:
+    def __init__(self, skips:list,file:str,  batch: int or None = None,  target: int = 3, self_start: bool = True, daemon: bool = True, data: list = ..., basis: float = 0.2, times: int = 3) -> None:
         self.skips = skips
         self.words=""
         self.file = open(file, "a")
         self.batch = batch
+
+        if self.batch is None:
+            self.batch = int(len(data) / 10)
+        debug("Batch is at {}".format(self.batch))
         data = [data[f:s] for f, s in step_range(len(data), self.batch) ]
 
         if len(data) > 0:
@@ -220,16 +224,13 @@ def combineCsvFiles(csvFilePaths: list[str]) -> str:
 
 
     with open(new_path, "a") as f:
-        lines = [[] for x in range(len(files[0]) - 1)]  # Use header as headers for item length
-
-
-        debug("Length of files".format(str(len(files[0]))))
-
+        lines = [[] for x in range(len(files[0]))]  # Use header as headers for item length
+        print(len(lines))
         # Flatten but keep linal structure
         for file in files:
             for line_number, line in enumerate(file):
                 #print(len(file), line_number)
-                if line_number == len(file) - 1:
+                if line_number == len(file) :
                     continue
                 lines[line_number].extend(line)
         del files
