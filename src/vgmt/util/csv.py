@@ -6,7 +6,7 @@ from uuid import uuid4
 from ..util.list import flatten
 from .thread import Thread
 import concurrent.futures
-
+import numpy as np
 def csvToArray(csvFilePath: str) -> list:
     """Transform a CSV File Path into an array (list)
 
@@ -27,29 +27,46 @@ def csvToArray(csvFilePath: str) -> list:
             print(', '.join(row))
         return [[x[0], int(x[1]), float(x[2])] for x in spamreader]
 
+def step_range(lent:float, interval: float):
+    count = 0
+    while count < lent:
+
+        if count > lent:
+            break
+        else:
+            yield count, count + interval
+        count += interval
+    yield count, lent - 1
 class CSV_Processor(Thread):
-    def __init__(self, skips:list, file:str, target: int = 3, self_start: bool = True, daemon: bool = True, data: list = ..., basis: float = 0.2, times: int = 3) -> None:
+    def __init__(self, skips:list,file:str,  batch: int = 10,  target: int = 3, self_start: bool = True, daemon: bool = True, data: list = ..., basis: float = 0.2, times: int = 3) -> None:
         self.skips = skips
+        self.words=""
         self.file = open(file, "a")
+        self.batch = batch
+        data = [data[f:s] for f, s in step_range(len(data), self.batch) ]
 
         if len(data) > 0:
             target = int(len(data) / 10)
         super().__init__(target, self_start, daemon, data, basis, times)
     def fcn(self, index: int = 0, d: list = [], skips: list = []) -> list:
-        f = []
-        for count, item in enumerate(d):
-            if not count in skips:
-                f.append(item)
 
-        # Write the file
-        self.file.write("\n" + ",".join(f))
+        for data in d:
+            f = []
+            for count, item in enumerate(data):
+                if not count in skips:
+                    f.append(item)
+            self.words += "" + ",".join(f) + "\n"
 
-        return f
+        return []
     def needsOpperation(self) -> bool:
-        debug("Processor at " + str(self.target))
+       # debug("Processor at " + str(self.target))
         # print("Length of Data: " + str(len(self.data)) )
         #print("Length of Results: " + str(len(self.unsorted_results)) )
         return super().needsOpperation()
+
+    def join(self) -> None:
+        self.file.write(self.words)
+        return super().join()
     def threaded(self: Thread, fcn):
         """ ## Threading Decorator
             Runs a paralized task for the amount in the target
@@ -98,15 +115,17 @@ class CSV_Processor(Thread):
             return final
         return wrapper
 class CSV_Writer(Thread):
-    def __init__(self, file:str, target: int = 5, self_start: bool = True, daemon: bool = True, data: list = ..., basis: float = 0.2, times: int = 3) -> None:
+    def __init__(self, file:str, target: int = 5, batch: int = 1, self_start: bool = True, daemon: bool = True, data: list = ..., basis: float = 0.2, times: int = 3) -> None:
         self.file = open(file, "a")
+        self.data=""
+        self.batch = batch
         super().__init__(target=target, self_start=True, daemon=daemon, data=data, basis=basis, times=times)
 
     def needsOpperation(self) -> bool:
         print("Writer at " + str(self.target))
         return super().needsOpperation()
     def fcn(self, index: int = 0, d: list = [],) -> list:
-        self.file.write("\n" + ",".join(d))
+        self.data += "" + ",".join(d) + "\n"
         return d
 
     def threaded(self: Thread, fcn):
@@ -187,16 +206,14 @@ def combineCsvFiles(csvFilePaths: list[str]) -> str:
     #print([text for text in files][0][0].split(","))
 
     _headers = flatten([text[0] for text in files]) # Flatten Array. Includes doubles
-    print(_headers)
     headers = [] #
     skip = [] # Skip the column
-
     for count, header in enumerate(_headers):
-        if not header in headers:
+        if not header in headers and not header == "":
             headers.append(header)
         else:
             skip.append(count)
-    debug("Headers are {}, skips are {}".format(str(headers), str(skip)))
+    # debug("Headers are {}, skips are {}".format(str(headers), str(skip)))
     # Flatten all the files (Single List)
 
     #files = [file[1:] for file in files] # Remove headers
@@ -204,7 +221,6 @@ def combineCsvFiles(csvFilePaths: list[str]) -> str:
 
     with open(new_path, "a") as f:
         lines = [[] for x in range(len(files[0]) - 1)]  # Use header as headers for item length
-        f_lines = lines # Make a copy
 
 
         debug("Length of files".format(str(len(files[0]))))
@@ -220,8 +236,6 @@ def combineCsvFiles(csvFilePaths: list[str]) -> str:
 
         worker = CSV_Processor(skip, new_path, data=lines)
 
-        #for line in lines: # Get all the lines and their position
-        #    worker.data.append(line)
         try:
             while len(worker.data) > 0:
                 # print(len(worker.data))
@@ -230,17 +244,10 @@ def combineCsvFiles(csvFilePaths: list[str]) -> str:
             pass
 
         worker.join()
-        #writer = CSV_Writer(new_path, data=worker.unsorted_results)
-        #try:
-        #    while len(writer.data) > 0:
-        #        pass
-        #except KeyboardInterrupt:
-        #    pass
-
-        #writer.join()
 
 
-        debug("Finished Writing Datafile at {}".format(path), type="sucess")
+
+        debug("Finished Writing Datafile at {}".format(new_path), type="sucess")
         f.close()
 
 def arrayToCsv(year: str, month: str, date: str, token: str, data: list, t:str = "bs", ) -> str:
