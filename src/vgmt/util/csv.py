@@ -267,6 +267,7 @@ def arrayToCsv(year: str, month: str, date: str, token: str, data: list, t:str =
         "bs": "System Time,Time Stamp,Value,Trend Rate", # Blood Sugar
         "hr": "", # Heart Rate
         "f": "", # Final (Blood Sugar and Heart Rate)
+        "c":"System Time,Time Stamp,Carbs,Insulin Carb Ratio,IOB, Value",
         "t": "" # Testing Data
     }
     if type(token) is not str or len(token) < 8: # TODO Find token length for here
@@ -276,7 +277,6 @@ def arrayToCsv(year: str, month: str, date: str, token: str, data: list, t:str =
     directory = os.path.join(DATA_PATH, t, token[:8])
     if not os.path.exists(os.path.join(directory)): # Create a oath
         os.makedirs(directory)
-
     path = os.path.join(directory, "{}-{}-{}.csv".format(month, date, year))
     if os.path.exists(path):
         debug("Data File at {} already exsists, overwriting".format(path),type="warn")
@@ -285,7 +285,7 @@ def arrayToCsv(year: str, month: str, date: str, token: str, data: list, t:str =
     with open(path, "a") as f:
         f.write(headers[t])
 
-        amt = headers[t].split(",")
+        amt = headers[t].split(",")[:-1]
         for rc, row in enumerate(data):
             line = "\n"
             # f.write()) Time Values, requries Time Stamps
